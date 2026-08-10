@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "prescripto-backend"
-version = "1.0.0"
+version = "1.2.0"
 description = "Prescripto Doctor Prescription & Pharmacy Management System Backend API"
 authors = [
     { name = "Akshay Bombatkar", email = "care.abtech@gmail.com" }

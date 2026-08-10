@@ -278,14 +278,60 @@ function initApp() {
   addPrescriptionItemRow(); // Initial medicine row in Rx form
 }
 
-// Switch Role (DOCTOR vs PHARMACIST)
+let currentAppLanguage = 'en';
+
+function setAppLanguage(lang) {
+  currentAppLanguage = lang;
+  document.querySelectorAll('.lang-select-btn').forEach(btn => btn.classList.remove('active'));
+  const activeBtn = document.getElementById(`appLang-${lang}`);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  const dict = I18N_DICT[lang] || I18N_DICT.en;
+
+  // Update UI Labels
+  const setTxt = (id, txt) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = txt;
+  };
+
+  setTxt('lblNavDoctor', dict.doctorView);
+  setTxt('lblNavPharmacy', dict.pharmacistView);
+  setTxt('lblNavStock', dict.stockPageView);
+  setTxt('lblApiStatus', dict.backendConnected);
+  setTxt('lblStockLedgerTitle', dict.stockLedgerTitle);
+  setTxt('lblStockLedgerSub', dict.stockLedgerSub);
+
+  // Table Headers
+  setTxt('thImg2', dict.thImg);
+  setTxt('thMedName2', dict.thMedName);
+  setTxt('thStockQty2', dict.thStockQty);
+  setTxt('thExpiry2', dict.thExpiry);
+  setTxt('thProvider2', dict.thProvider);
+  setTxt('thStatus2', dict.thStatus);
+  setTxt('thActions2', dict.thActions);
+
+  renderPatientsTable();
+  renderInventoryTable();
+  renderStockLedgerTable();
+  renderPrescriptionsTable();
+  renderDispenseQueue();
+  updateMetrics();
+}
+
+// Switch Role (DOCTOR, PHARMACIST, STOCK)
 function switchRole(role) {
   state.currentRole = role;
   document.getElementById('roleDoctorBtn').classList.toggle('active', role === 'DOCTOR');
   document.getElementById('rolePharmacistBtn').classList.toggle('active', role === 'PHARMACIST');
+  document.getElementById('roleStockBtn').classList.toggle('active', role === 'STOCK');
   
   document.getElementById('doctorDashboard').classList.toggle('active', role === 'DOCTOR');
   document.getElementById('pharmacistDashboard').classList.toggle('active', role === 'PHARMACIST');
+  document.getElementById('stockDashboard').classList.toggle('active', role === 'STOCK');
+
+  if (role === 'STOCK') {
+    renderStockLedgerTable();
+  }
 }
 
 // Toggle Light / Dark Mode
@@ -572,25 +618,32 @@ function filterRxStatus(status, btnElement) {
 // Render Pharmacy Inventory Table
 function renderInventoryTable() {
   const tbody = document.getElementById('inventoryTableBody');
-  const search = document.getElementById('inventorySearch').value.toLowerCase();
-  const cat = document.getElementById('inventoryCategoryFilter').value;
+  const searchInput = document.getElementById('inventorySearch');
+  const search = searchInput ? searchInput.value.toLowerCase() : '';
+  const catInput = document.getElementById('inventoryCategoryFilter');
+  const cat = catInput ? catInput.value : '';
 
   const filtered = state.medicines.filter(m => 
     (!cat || m.category === cat) &&
-    (m.name.toLowerCase().includes(search) || m.batch_number.toLowerCase().includes(search))
+    (m.name.toLowerCase().includes(search) || m.batch_number.toLowerCase().includes(search) || (m.hsn_code && m.hsn_code.includes(search)))
   );
+
+  const dict = I18N_DICT[currentAppLanguage] || I18N_DICT.en;
 
   if (filtered.length === 0) {
     tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color: var(--text-muted);">No medicines in inventory</td></tr>`;
     return;
   }
 
+  const defaultImg = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=100&auto=format&fit=crop&q=60";
+
   tbody.innerHTML = filtered.map(m => {
     const isLow = m.stock_quantity <= m.min_stock_alert;
     const isExp = new Date(m.expiry_date) < new Date();
+    const img = m.image_url || defaultImg;
     
     return `
-      <tr>
+      <tr style="${isExp ? 'background: rgba(239, 68, 68, 0.08);' : ''}">
         <td><strong>${escapeHtml(m.name)}</strong></td>
         <td><span class="badge badge-indigo">${escapeHtml(m.category)}</span></td>
         <td>
@@ -602,13 +655,79 @@ function renderInventoryTable() {
         <td>${m.expiry_date}</td>
         <td><code>${m.batch_number}</code></td>
         <td>
-          ${isExp ? '<span class="badge badge-crimson">Expired</span>' : 
-            isLow ? '<span class="badge badge-amber">Low Stock</span>' : 
-            '<span class="badge badge-teal">In Stock</span>'}
+          ${isExp ? `<span class="badge badge-red-flag">${dict.statusExpiredRedFlag}</span>` : 
+            isLow ? `<span class="badge badge-amber">${dict.statusLowStock}</span>` : 
+            `<span class="badge badge-teal">${dict.statusAvailable}</span>`}
         </td>
         <td>
           <button class="btn btn-sm btn-primary" onclick="openRestockModal('${m.id}')">
             <i class="fa-solid fa-plus"></i> Restock
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// Render Dedicated Stock & Restock Page Table
+function renderStockLedgerTable() {
+  const tbody = document.getElementById('stockLedgerTableBody');
+  if (!tbody) return;
+
+  const searchInput = document.getElementById('stockSearchInput');
+  const search = searchInput ? searchInput.value.toLowerCase() : '';
+
+  const filtered = state.medicines.filter(m => 
+    !search || 
+    m.name.toLowerCase().includes(search) || 
+    m.batch_number.toLowerCase().includes(search) ||
+    (m.provider_name && m.provider_name.toLowerCase().includes(search)) ||
+    (m.hsn_code && m.hsn_code.includes(search))
+  );
+
+  const dict = I18N_DICT[currentAppLanguage] || I18N_DICT.en;
+  const defaultImg = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=100&auto=format&fit=crop&q=60";
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color: var(--text-muted);">No stock ledger records found</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(m => {
+    const isLow = m.stock_quantity <= m.min_stock_alert;
+    const isExp = new Date(m.expiry_date) < new Date();
+    const img = m.image_url || defaultImg;
+    const provider = m.provider_name || "Apex Pharma Distributors";
+    const hsn = m.hsn_code || "30049099";
+    const rack = m.rack_location || "Rack A-12";
+
+    return `
+      <tr style="${isExp ? 'background: rgba(239, 68, 68, 0.08);' : ''}">
+        <td><img src="${img}" class="table-med-img" alt="Med"></td>
+        <td>
+          <strong style="font-size:14px;">${escapeHtml(m.name)}</strong>
+          <span style="display:block; font-size:11px; color:var(--text-muted);">${escapeHtml(m.category)} • ${m.unit}</span>
+        </td>
+        <td>
+          <strong style="font-size:15px; color: ${isLow ? '#f87171' : '#34d399'};">${m.stock_quantity}</strong>
+        </td>
+        <td>
+          <span style="color: ${isExp ? '#f87171' : 'inherit'}; font-weight: 600;">${m.expiry_date}</span>
+        </td>
+        <td>
+          <strong>${escapeHtml(provider)}</strong>
+          <span style="display:block; font-size:11px; color:var(--text-muted);">${escapeHtml(m.provider_contact || '+91 9876543210')}</span>
+        </td>
+        <td><code>${hsn}</code></td>
+        <td><span class="badge badge-indigo">${rack}</span></td>
+        <td>
+          ${isExp ? `<span class="badge badge-red-flag">${dict.statusExpiredRedFlag}</span>` : 
+            isLow ? `<span class="badge badge-amber">${dict.statusLowStock}</span>` : 
+            `<span class="badge badge-teal">${dict.statusAvailable}</span>`}
+        </td>
+        <td>
+          <button class="btn btn-sm btn-emerald" onclick="openRestockModal('${m.id}')">
+            <i class="fa-solid fa-plus"></i> ${dict.restockBtn}
           </button>
         </td>
       </tr>
@@ -717,6 +836,12 @@ function handleAddMedicine(event) {
   const unit = document.getElementById('mUnit').value;
   const alertVal = parseInt(document.getElementById('mAlert').value);
 
+  const imgEl = document.getElementById('mImgUrl');
+  const providerEl = document.getElementById('mProviderName');
+  const contactEl = document.getElementById('mProviderContact');
+  const hsnEl = document.getElementById('mHsnCode');
+  const rackEl = document.getElementById('mRackLocation');
+
   const newMed = {
     id: 'm-' + Date.now(),
     name,
@@ -726,7 +851,12 @@ function handleAddMedicine(event) {
     expiry_date: expiry,
     batch_number: batch,
     unit,
-    min_stock_alert: alertVal
+    min_stock_alert: alertVal,
+    image_url: imgEl ? imgEl.value.trim() : null,
+    provider_name: providerEl ? providerEl.value.trim() : "Apex Pharma Distributors",
+    provider_contact: contactEl ? contactEl.value.trim() : "+91 9876543210",
+    hsn_code: hsnEl ? hsnEl.value.trim() : "30049099",
+    rack_location: rackEl ? rackEl.value.trim() : "Rack A-12"
   };
 
   state.medicines.unshift(newMed);
@@ -734,6 +864,7 @@ function handleAddMedicine(event) {
   document.getElementById('addMedicineForm').reset();
 
   renderInventoryTable();
+  renderStockLedgerTable();
   updateMetrics();
   alert(`Medicine ${name} added to store inventory!`);
 }
@@ -765,6 +896,7 @@ function handleRestockSubmit(event) {
 
   closeRestockModal();
   renderInventoryTable();
+  renderStockLedgerTable();
   renderDispenseQueue();
   updateMetrics();
 }

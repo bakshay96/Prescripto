@@ -11,6 +11,11 @@ class MedicineBase(BaseModel):
     batch_number: str
     unit: str = "Tablets"
     min_stock_alert: int = 10
+    image_url: Optional[str] = None
+    provider_name: Optional[str] = "Apex Pharma Distributors"
+    provider_contact: Optional[str] = "+91 9876543210"
+    hsn_code: Optional[str] = "30049099"
+    rack_location: Optional[str] = "Rack A-12"
 
 class MedicineCreate(MedicineBase):
     pass
