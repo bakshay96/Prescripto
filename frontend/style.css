@@ -595,3 +595,36 @@ input:focus, select:focus, textarea:focus {
 
 .mt-3 { margin-top: 12px; }
 .mt-4 { margin-top: 20px; }
+
+/* Print Media Query Rules */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+  }
+  
+  .app-header, .main-content, .modal-backdrop > *:not(.modal-content), .modal-header, .role-selector, .modal-footer, .close-btn {
+    display: none !important;
+  }
+
+  .modal-backdrop {
+    position: static !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    display: block !important;
+  }
+
+  .modal-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  #printableRxArea {
+    display: block !important;
+  }
+}

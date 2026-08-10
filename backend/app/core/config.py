@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Prescripto - Doctor Prescription & Pharmacy Management System"
-    VERSION: str = "1.0.0"
+    VERSION: str = "1.1.0"
     API_V1_STR: str = "/api/v1"
     
     SECRET_KEY: str = "prescripto_super_secret_key_change_in_production_2026"

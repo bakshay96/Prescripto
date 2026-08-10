@@ -91,6 +91,177 @@ let state = {
   ]
 };
 
+// i18n Dictionary for Vanilla Web App
+const I18N_DICT = {
+  en: {
+    hospitalName: "City Care Hospital & Medical Store",
+    hospitalSub: "108 Health Avenue • Phone: +91 98765 43210 • Reg: CL-2026-9081",
+    title: "MEDICAL PRESCRIPTION",
+    rxNum: "Prescription No:",
+    date: "Date:",
+    patient: "Patient Name:",
+    age: "Age:",
+    location: "Village / Location:",
+    diagnosis: "Clinical Diagnosis:",
+    medicinesTitle: "Prescribed Medicines & Dosage Instructions",
+    colMed: "Medicine Name",
+    colDosage: "Dosage",
+    colFreq: "Frequency",
+    colDuration: "Duration",
+    colInstructions: "Instructions",
+    docSig: "Doctor's Signature & Stamp",
+    disclaimer: "Note: Take medicines strictly as prescribed. Do not substitute without doctor's advice.",
+    freqMap: {
+      "1-0-1": "Morning & Night (1-0-1)",
+      "1-1-1": "Morning, Afternoon & Night (1-1-1)",
+      "1-0-0": "Morning Only (1-0-0)",
+      "0-0-1": "Night Only (0-0-1)"
+    }
+  },
+  mr: {
+    hospitalName: "सिटी केअर हॉस्पिटल आणि मेडिकल स्टोअर",
+    hospitalSub: "१०८ हेल्थ एव्हेन्यू • फोन: +९१ ९८७६५ ४३२१० • नोंदणी क्र: CL-2026-9081",
+    title: "वैद्यकीय चिठ्ठी (प्रिस्क्रिप्शन)",
+    rxNum: "प्रिस्क्रिप्शन क्रमांक:",
+    date: "दिनांक:",
+    patient: "रुग्णाचे नाव:",
+    age: "वय:",
+    location: "गाव / पत्ता:",
+    diagnosis: "निदान (आजाराचे स्वरूप):",
+    medicinesTitle: "औषधांचा सविस्तर तपशील आणि घेण्याच्या वेळा",
+    colMed: "औषधाचे नाव",
+    colDosage: "मात्रा (डोस)",
+    colFreq: "वेळा (वारंवारता)",
+    colDuration: "कालावधी",
+    colInstructions: "खास सूचना",
+    docSig: "डॉक्टरांची स्वाक्षरी व शिक्का",
+    disclaimer: "सूचना: औषधे दिलेल्या वेळेत व सूचनेनुसारच घ्यावीत. डॉक्टरांच्या सल्ल्याशिवाय बदल करू नये.",
+    freqMap: {
+      "1-0-1": "सकाळी व रात्री (१-०-१)",
+      "1-1-1": "सकाळी, दुपारी व रात्री (१-१-१)",
+      "1-0-0": "फक्त सकाळी (१-०-०)",
+      "0-0-1": "फक्त रात्री (०-०-१)"
+    }
+  },
+  hi: {
+    hospitalName: "सिटी केयर अस्पताल एवं मेडिकल स्टोर",
+    hospitalSub: "108 हेल्थ एवेन्यू • फोन: +91 98765 43210 • पंजीकरण सं: CL-2026-9081",
+    title: "चिकित्सकीय पर्चा (प्रिस्क्रिप्शन)",
+    rxNum: "पर्चा संख्या:",
+    date: "दिनांक:",
+    patient: "मरीज का नाम:",
+    age: "आयु / उम्र:",
+    location: "गांव / स्थान:",
+    diagnosis: "रोग निदान:",
+    medicinesTitle: "दवाइयों का विवरण एवं खुराक के निर्देश",
+    colMed: "दवा का नाम",
+    colDosage: "खुराक (डोज)",
+    colFreq: "बारंबरता (फ्रीक्वेंसी)",
+    colDuration: "अवधि",
+    colInstructions: "विशेष निर्देश",
+    docSig: "डॉक्टर के हस्ताक्षर एवं मुहर",
+    disclaimer: "नोट: दवाइयां बताई गई समयावधि और निर्देशानुसार ही लें। बिना सलाह दवाइयां न बदलें।",
+    freqMap: {
+      "1-0-1": "सुबह एवं रात (1-0-1)",
+      "1-1-1": "सुबह, दोपहर एवं रात (1-1-1)",
+      "1-0-0": "केवल सुबह (1-0-0)",
+      "0-0-1": "केवल रात (0-0-1)"
+    }
+  }
+};
+
+let currentPrintRx = null;
+let currentPrintLang = 'en';
+
+function openPrintModal(rxId) {
+  currentPrintRx = state.prescriptions.find(r => r.id === rxId) || state.prescriptions[0];
+  if (!currentPrintRx) return;
+  currentPrintLang = 'en';
+  renderPrintTemplate();
+  document.getElementById('printModal').classList.add('open');
+}
+
+function closePrintModal() {
+  document.getElementById('printModal').classList.remove('open');
+}
+
+function changePrintLang(lang) {
+  currentPrintLang = lang;
+  document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById(`langBtn-${lang}`).classList.add('active');
+  renderPrintTemplate();
+}
+
+function renderPrintTemplate() {
+  if (!currentPrintRx) return;
+  const dict = I18N_DICT[currentPrintLang] || I18N_DICT.en;
+  const rx = currentPrintRx;
+
+  const container = document.getElementById('printableRxArea');
+  container.innerHTML = `
+    <div class="print-rx-doc" style="background:#fff; color:#000; padding:24px; font-family:sans-serif;">
+      <div style="display:flex; justify-content:space-between; border-bottom:2px solid #0d9488; padding-bottom:12px; margin-bottom:16px;">
+        <div>
+          <h1 style="font-size:22px; font-weight:800; color:#0f766e; margin:0;">${dict.hospitalName}</h1>
+          <p style="font-size:12px; color:#475569; margin:4px 0 0;">${dict.hospitalSub}</p>
+        </div>
+        <div style="text-align:right;">
+          <span style="background:#ccfbf1; color:#0f766e; font-size:11px; font-weight:700; padding:4px 8px; border-radius:12px;">${dict.title}</span>
+          <p style="font-size:12px; margin:6px 0 0; color:#334155;"><strong>${dict.rxNum}</strong> ${rx.prescription_number}</p>
+          <p style="font-size:12px; margin:2px 0 0; color:#334155;"><strong>${dict.date}</strong> ${new Date(rx.created_at).toLocaleDateString()}</p>
+        </div>
+      </div>
+
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px; border-radius:8px; display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; font-size:12px; margin-bottom:16px;">
+        <div><span style="color:#64748b; display:block;">${dict.patient}</span><strong style="color:#0f172a;">${escapeHtml(rx.patient_name)}</strong></div>
+        <div><span style="color:#64748b; display:block;">${dict.age}</span><strong style="color:#0f172a;">29y 4m 16d</strong></div>
+        <div><span style="color:#64748b; display:block;">${dict.location}</span><strong style="color:#0f172a;">${escapeHtml(rx.village)}</strong></div>
+        <div><span style="color:#64748b; display:block;">${dict.diagnosis}</span><strong style="color:#0f172a;">${escapeHtml(rx.diagnosis)}</strong></div>
+      </div>
+
+      <div style="margin-bottom:24px;">
+        <h3 style="font-size:13px; font-weight:800; color:#1e293b; text-transform:uppercase; margin-bottom:8px;">${dict.medicinesTitle}</h3>
+        <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
+          <thead>
+            <tr style="background:#0f766e; color:#fff;">
+              <th style="padding:8px;">#</th>
+              <th style="padding:8px;">${dict.colMed}</th>
+              <th style="padding:8px;">${dict.colDosage}</th>
+              <th style="padding:8px;">${dict.colFreq}</th>
+              <th style="padding:8px;">${dict.colDuration}</th>
+              <th style="padding:8px;">${dict.colInstructions}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rx.items.map((item, idx) => `
+              <tr style="border-bottom:1px solid #e2e8f0; background: ${idx % 2 === 0 ? '#fff' : '#f8fafc'};">
+                <td style="padding:8px; font-weight:bold;">${idx + 1}</td>
+                <td style="padding:8px; font-weight:bold; color:#0f172a;">${escapeHtml(item.medicine_name)}</td>
+                <td style="padding:8px;">${item.dosage || '500mg'}</td>
+                <td style="padding:8px; font-weight:600; color:#0f766e;">${dict.freqMap[item.frequency] || item.frequency || '1-0-1'}</td>
+                <td style="padding:8px; font-weight:bold;">${item.duration_days || 3} Days</td>
+                <td style="padding:8px; color:#475569;">${item.instructions || 'After Meal'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px; align-items:end; margin-top:40px; border-top:1px solid #e2e8f0; padding-top:16px;">
+        <p style="font-size:11px; color:#64748b; font-style:italic;">${dict.disclaimer}</p>
+        <div style="text-align:right;">
+          <div style="border-bottom:1px dashed #94a3b8; width:150px; display:inline-block; margin-bottom:8px;"></div>
+          <p style="font-size:11px; font-weight:bold; margin:0;">${dict.docSig}</p>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function triggerPrint() {
+  window.print();
+}
+
 // Initialize Application
 document.addEventListener('DOMContentLoaded', () => {
   initApp();
@@ -377,6 +548,11 @@ function renderPrescriptionsTable(statusFilter = '') {
         </span>
       </td>
       <td>${new Date(rx.created_at).toLocaleDateString()}</td>
+      <td>
+        <button class="btn btn-sm btn-secondary" onclick="openPrintModal('${rx.id}')">
+          <i class="fa-solid fa-print"></i> Print
+        </button>
+      </td>
     </tr>
   `).join('');
 }

@@ -7,7 +7,7 @@ name = "prescripto-backend"
 version = "1.0.0"
 description = "Prescripto Doctor Prescription & Pharmacy Management System Backend API"
 authors = [
-    { name = "Akshay Bombatkar", email = "akshaymali.edu@gmail.com" }
+    { name = "Akshay Bombatkar", email = "care.abtech@gmail.com" }
 ]
 dependencies = [
     "fastapi>=0.109.0",
