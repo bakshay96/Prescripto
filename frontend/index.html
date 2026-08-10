@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prescripto - Doctor Prescription & Pharmacy Management System</title>
+  
+  <!-- Google Fonts & FontAwesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Header & Clinic Branding -->
+    <header class="app-header glass-card">
+      <div class="header-left">
+        <div class="logo-icon">
+          <i class="fa-solid fa-staff-snake"></i>
+        </div>
+        <div class="brand-info">
+          <h1>Prescripto</h1>
+          <p class="subtitle">Doctor Prescription & Pharmacy Inventory System</p>
+        </div>
+      </div>
+      
+      <div class="header-clinic-info glass-pill" id="clinicInfoDisplay">
+        <i class="fa-solid fa-hospital-user"></i>
+        <div>
+          <span class="clinic-name" id="clinicName">City Care Hospital & Medical Store</span>
+          <span class="clinic-sub" id="clinicAddress">108 Health Avenue • Reg: CL-2026-9081</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="role-selector">
+          <button class="role-btn active" id="roleDoctorBtn" onclick="switchRole('DOCTOR')">
+            <i class="fa-solid fa-user-doctor"></i> Doctor View
+          </button>
+          <button class="role-btn" id="rolePharmacistBtn" onclick="switchRole('PHARMACIST')">
+            <i class="fa-solid fa-pills"></i> Pharmacist View
+          </button>
+        </div>
+        
+        <button class="role-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Light / Dark Mode">
+          <i class="fa-solid fa-moon" id="themeIcon"></i>
+        </button>
+        
+        <div class="api-status-badge online" id="apiStatusBadge">
+          <span class="status-dot"></span> Backend API Connected
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- DOCTOR DASHBOARD -->
+      <section id="doctorDashboard" class="dashboard-section active">
+        <div class="dashboard-grid">
+          
+          <!-- Patient Registration & List Card -->
+          <div class="glass-card">
+            <div class="card-header">
+              <h2><i class="fa-solid fa-user-plus"></i> Patient Management</h2>
+              <span class="badge badge-teal">Calculates Age Dynamically</span>
+            </div>
+            
+            <form id="patientForm" onsubmit="handleCreatePatient(event)">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="pName">Patient Name *</label>
+                  <input type="text" id="pName" placeholder="e.g. Rajesh Kumar" required>
+                </div>
+                <div class="form-group">
+                  <label for="pVillage">Village / Location *</label>
+                  <input type="text" id="pVillage" placeholder="e.g. Rampur Village, Dist 4" required>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="pDob">Date of Birth *</label>
+                  <input type="date" id="pDob" onchange="calculateLiveAge()" required>
+                </div>
+                <div class="form-group">
+                  <label for="pGender">Gender</label>
+                  <select id="pGender">
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Dynamic Age Live Preview Box -->
+              <div class="age-preview-box" id="agePreviewBox">
+                <div class="age-title"><i class="fa-solid fa-cake-candles"></i> Calculated Age:</div>
+                <div class="age-value" id="agePreviewValue">Select Date of Birth to view age</div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="pPhone">Phone Number</label>
+                  <input type="tel" id="pPhone" placeholder="+91 9876543210">
+                </div>
+                <div class="form-group">
+                  <label for="pHistory">Medical History / Allergies</label>
+                  <input type="text" id="pHistory" placeholder="e.g. Diabetic, Penicillin allergy">
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-full">
+                <i class="fa-solid fa-check"></i> Register Patient
+              </button>
+            </form>
+
+            <hr class="divider">
+
+            <!-- Search Patients -->
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="patientSearchInput" placeholder="Search patients by name or village..." onkeyup="filterPatients()">
+            </div>
+
+            <!-- Patient List Table -->
+            <div class="table-container mt-3">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Village/Location</th>
+                    <th>Date of Birth</th>
+                    <th>Dynamic Age</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="patientsTableBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Prescription Generator Card -->
+          <div class="glass-card">
+            <div class="card-header">
+              <h2><i class="fa-solid fa-file-prescription"></i> Create Prescription</h2>
+              <span class="badge badge-indigo">Doctor Access Only</span>
+            </div>
+
+            <form id="prescriptionForm" onsubmit="handleCreatePrescription(event)">
+              <div class="form-group">
+                <label for="rxPatientSelect">Select Patient *</label>
+                <select id="rxPatientSelect" required>
+                  <option value="">-- Choose Patient --</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="rxDiagnosis">Clinical Diagnosis *</label>
+                <input type="text" id="rxDiagnosis" placeholder="e.g. Acute Viral Fever & Bodyache" required>
+              </div>
+
+              <div class="form-group">
+                <label for="rxNotes">Doctor Notes / Dietary Advice</label>
+                <textarea id="rxNotes" rows="2" placeholder="e.g. Drink plenty of water. Avoid cold food."></textarea>
+              </div>
+
+              <div class="prescription-items-header">
+                <h3>Prescribed Medicines</h3>
+                <button type="button" class="btn btn-sm btn-secondary" onclick="addPrescriptionItemRow()">
+                  <i class="fa-solid fa-plus"></i> Add Medicine
+                </button>
+              </div>
+
+              <div id="rxItemsContainer" class="rx-items-container">
+                <!-- Medicine item rows inserted dynamically -->
+              </div>
+
+              <button type="submit" class="btn btn-emerald btn-full mt-4">
+                <i class="fa-solid fa-paper-plane"></i> Generate & Issue Prescription
+              </button>
+            </form>
+          </div>
+
+        </div>
+
+        <!-- Recent Prescriptions History -->
+        <div class="glass-card mt-4">
+          <div class="card-header">
+            <h2><i class="fa-solid fa-clock-rotate-left"></i> Prescriptions History</h2>
+            <div class="filter-tabs">
+              <button class="filter-btn active" onclick="filterRxStatus('', this)">All</button>
+              <button class="filter-btn" onclick="filterRxStatus('PENDING', this)">Pending</button>
+              <button class="filter-btn" onclick="filterRxStatus('DISPENSED', this)">Dispensed</button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Prescription #</th>
+                  <th>Patient</th>
+                  <th>Village</th>
+                  <th>Diagnosis</th>
+                  <th>Medicines</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="recentRxTableBody">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- PHARMACIST DASHBOARD -->
+      <section id="pharmacistDashboard" class="dashboard-section">
+        
+        <!-- Inventory Summary Metrics Cards -->
+        <div class="metrics-grid">
+          <div class="metric-card glass-card">
+            <div class="metric-icon teal"><i class="fa-solid fa-boxes-stacked"></i></div>
+            <div class="metric-info">
+              <span class="metric-label">Total Medicines</span>
+              <span class="metric-value" id="metricTotalMeds">0</span>
+            </div>
+          </div>
+          <div class="metric-card glass-card">
+            <div class="metric-icon amber"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="metric-info">
+              <span class="metric-label">Low Stock Alerts</span>
+              <span class="metric-value" id="metricLowStock">0</span>
+            </div>
+          </div>
+          <div class="metric-card glass-card">
+            <div class="metric-icon crimson"><i class="fa-solid fa-calendar-xmark"></i></div>
+            <div class="metric-info">
+              <span class="metric-label">Expiring Soon</span>
+              <span class="metric-value" id="metricExpiring">0</span>
+            </div>
+          </div>
+          <div class="metric-card glass-card">
+            <div class="metric-icon emerald"><i class="fa-solid fa-prescription-bottle-medical"></i></div>
+            <div class="metric-info">
+              <span class="metric-label">Pending Dispenses</span>
+              <span class="metric-value" id="metricPendingRx">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-grid mt-4">
+          
+          <!-- Medical Store Inventory Card -->
+          <div class="glass-card">
+            <div class="card-header">
+              <h2><i class="fa-solid fa-prescription-bottle"></i> Medical Store Inventory</h2>
+              <button class="btn btn-sm btn-primary" onclick="openAddMedicineModal()">
+                <i class="fa-solid fa-plus"></i> Add New Medicine
+              </button>
+            </div>
+
+            <div class="table-controls">
+              <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="inventorySearch" placeholder="Search medicine name or batch..." onkeyup="renderInventoryTable()">
+              </div>
+              <select id="inventoryCategoryFilter" onchange="renderInventoryTable()">
+                <option value="">All Categories</option>
+                <option value="Analgesic">Analgesic</option>
+                <option value="Antibiotic">Antibiotic</option>
+                <option value="Syrup">Syrup</option>
+                <option value="Vitamin">Vitamin</option>
+                <option value="Antacid">Antacid</option>
+              </select>
+            </div>
+
+            <div class="table-container mt-3">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Stock Quantity</th>
+                    <th>Price</th>
+                    <th>Expiry Date</th>
+                    <th>Batch</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="inventoryTableBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Pending Prescriptions Dispense Queue -->
+          <div class="glass-card">
+            <div class="card-header">
+              <h2><i class="fa-solid fa-dispenser"></i> Pharmacy Dispense Queue</h2>
+              <span class="badge badge-amber">Live Stock Deduction</span>
+            </div>
+
+            <div class="dispense-queue-list" id="dispenseQueueList">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Add Medicine Modal -->
+    <div id="addMedicineModal" class="modal-backdrop">
+      <div class="modal-content glass-card">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-pills"></i> Add New Medicine to Store</h3>
+          <button class="close-btn" onclick="closeAddMedicineModal()">&times;</button>
+        </div>
+        <form id="addMedicineForm" onsubmit="handleAddMedicine(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="mName">Medicine Name *</label>
+              <input type="text" id="mName" placeholder="e.g. Paracetamol 500mg" required>
+            </div>
+            <div class="form-group">
+              <label for="mCategory">Category *</label>
+              <input type="text" id="mCategory" placeholder="e.g. Analgesic, Antibiotic" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="mStock">Initial Stock Quantity *</label>
+              <input type="number" id="mStock" min="0" value="100" required>
+            </div>
+            <div class="form-group">
+              <label for="mPrice">Unit Price (₹) *</label>
+              <input type="number" id="mPrice" step="0.01" min="0" value="10.00" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="mExpiry">Expiry Date *</label>
+              <input type="date" id="mExpiry" required>
+            </div>
+            <div class="form-group">
+              <label for="mBatch">Batch Number *</label>
+              <input type="text" id="mBatch" placeholder="e.g. BATCH-2026-X" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="mUnit">Unit Type</label>
+              <select id="mUnit">
+                <option value="Tablets">Tablets</option>
+                <option value="Strip">Strip</option>
+                <option value="Bottle">Bottle</option>
+                <option value="Syrup">Syrup</option>
+                <option value="Injection">Injection</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="mAlert">Min Stock Threshold Alert</label>
+              <input type="number" id="mAlert" min="1" value="15">
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeAddMedicineModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add to Inventory</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Restock Modal -->
+    <div id="restockModal" class="modal-backdrop">
+      <div class="modal-content glass-card">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-boxes-packing"></i> Restock Medicine</h3>
+          <button class="close-btn" onclick="closeRestockModal()">&times;</button>
+        </div>
+        <form id="restockForm" onsubmit="handleRestockSubmit(event)">
+          <input type="hidden" id="restockMedId">
+          <p class="modal-sub" id="restockMedName">Medicine Name</p>
+          
+          <div class="form-group">
+            <label for="restockQuantity">Additional Stock Quantity *</label>
+            <input type="number" id="restockQuantity" min="1" value="50" required>
+          </div>
+          <div class="form-group">
+            <label for="restockNotes">Restock Notes</label>
+            <input type="text" id="restockNotes" value="New shipment received from vendor">
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeRestockModal()">Cancel</button>
+            <button type="submit" class="btn btn-emerald"><i class="fa-solid fa-arrow-up"></i> Update Stock</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
