@@ -124,3 +124,13 @@ cd frontend
 py -m http.server 3000
 ```
 Open [http://127.0.0.1:3000](http://127.0.0.1:3000) in your browser.
+
+---
+
+## 🌿 Git Branching Strategy & Versioning Protocol
+
+Every new feature or bugfix follows an isolated branching strategy and synchronized versioning policy (detailed in [DEVELOPMENT.md](file:///d:/MASAI/Prescripto/DEVELOPMENT.md)):
+
+- **Feature Branching**: Developers branch off `main` using `feature/<feature-name>` (e.g. `feature/inventory-qr-scanner`).
+- **Synchronized Versioning**: Backend (`backend/pyproject.toml`, `backend/app/core/config.py`) and Frontend (`frontend/package.json`, `frontend/.env`) maintain synchronized semantic versioning (`v1.0.0`, `v1.1.0`).
+
