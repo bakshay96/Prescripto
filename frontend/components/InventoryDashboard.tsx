@@ -17,6 +17,11 @@ export interface MedicineItem {
   batchNumber: string;
   minStockAlert: number;
   lastUpdated: string;
+  imageUrl?: string;
+  providerName?: string;
+  providerContact?: string;
+  hsnCode?: string;
+  rackLocation?: string;
 }
 
 // Initial Mock Data

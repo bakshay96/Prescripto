@@ -17,3 +17,15 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# MongoDB Atlas Client Initialization
+try:
+    from pymongo import MongoClient
+    mongo_client = MongoClient(settings.MONGO_URI or settings.MONGODB_URL)
+    mongo_db = mongo_client[settings.MONGO_DB_NAME or settings.MONGODB_DB_NAME]
+except Exception as e:
+    mongo_client = None
+    mongo_db = None
+
+def get_mongo_db():
+    return mongo_db

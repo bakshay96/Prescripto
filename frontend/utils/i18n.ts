@@ -370,3 +370,11 @@ export const TRANSLATIONS: Record<Language, any> = {
     }
   }
 };
+
+export function translateInstruction(text: string, lang: Language): string {
+  if (!text) return "";
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+  if (text.includes("Before") || text.includes("before")) return t.beforeMeal || "Before Meal";
+  if (text.includes("After") || text.includes("after")) return t.afterMeal || "After Meal";
+  return text;
+}

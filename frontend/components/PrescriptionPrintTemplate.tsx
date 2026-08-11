@@ -174,8 +174,8 @@ export default function PrescriptionPrintTemplate({ data, onClose }: Props) {
             </thead>
             <tbody className="divide-y divide-slate-200 border border-slate-200">
               {data.items.map((item, idx) => {
-                const freqText = t.freqMap[item.frequency] || item.frequency;
-                const timingText = item.timing ? translateInstruction(item.timing, lang) : translateInstruction("After Meal", lang);
+                const freqText = t.freqMap?.[item.frequency] || item.frequency;
+                const timingText = item.timing?.includes("Before") ? (t.beforeMeal || "Before Meal") : (t.afterMeal || "After Meal");
 
                 return (
                   <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50/70"}>
