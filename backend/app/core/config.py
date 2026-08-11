@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     
     MONGODB_URL: str = "mongodb://localhost:27017"
     MONGODB_DB_NAME: str = "prescripto_db"
+    MONGO_URI: str = "mongodb://localhost:27017"
+    MONGO_DB_NAME: str = "prescripto"
 
     HOST: str = "127.0.0.1"
     PORT: int = 8080
