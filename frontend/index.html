@@ -36,13 +36,22 @@
         </div>
       </div>
 
-      <div class="header-right">
+        <!-- Global Language Selector -->
+        <div class="role-selector">
+          <button class="role-btn lang-select-btn active" id="appLang-en" onclick="setAppLanguage('en')">English</button>
+          <button class="role-btn lang-select-btn" id="appLang-mr" onclick="setAppLanguage('mr')">मराठी</button>
+          <button class="role-btn lang-select-btn" id="appLang-hi" onclick="setAppLanguage('hi')">हिंदी</button>
+        </div>
+
         <div class="role-selector">
           <button class="role-btn active" id="roleDoctorBtn" onclick="switchRole('DOCTOR')">
-            <i class="fa-solid fa-user-doctor"></i> Doctor View
+            <i class="fa-solid fa-user-doctor"></i> <span id="lblNavDoctor">Doctor View</span>
           </button>
           <button class="role-btn" id="rolePharmacistBtn" onclick="switchRole('PHARMACIST')">
-            <i class="fa-solid fa-pills"></i> Pharmacist View
+            <i class="fa-solid fa-pills"></i> <span id="lblNavPharmacy">Pharmacist View</span>
+          </button>
+          <button class="role-btn" id="roleStockBtn" onclick="switchRole('STOCK')">
+            <i class="fa-solid fa-boxes-packing"></i> <span id="lblNavStock">Stock & Restock Page</span>
           </button>
         </div>
         
@@ -51,7 +60,7 @@
         </button>
         
         <div class="api-status-badge online" id="apiStatusBadge">
-          <span class="status-dot"></span> Backend API Connected
+          <span class="status-dot"></span> <span id="lblApiStatus">Backend API Connected</span>
         </div>
       </div>
     </header>
@@ -319,6 +328,47 @@
         </div>
       </section>
 
+      <!-- DEDICATED STOCK & RESTOCK DASHBOARD -->
+      <section id="stockDashboard" class="dashboard-section">
+        <div class="glass-card">
+          <div class="card-header">
+            <h2><i class="fa-solid fa-boxes-packing"></i> <span id="lblStockLedgerTitle">Stock & Restock Ledger Management</span></h2>
+            <span class="badge badge-teal" id="lblStockLedgerSub">Supplier & HSN Audit Portal</span>
+          </div>
+
+          <div class="table-controls">
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="stockSearchInput" placeholder="Search by provider, HSN, medicine name..." onkeyup="renderStockLedgerTable()">
+            </div>
+            <button class="btn btn-primary" onclick="openAddMedicineModal()">
+              <i class="fa-solid fa-plus"></i> Add New Stock Item
+            </button>
+          </div>
+
+          <div class="table-container mt-3">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th id="thImg2">Image</th>
+                  <th id="thMedName2">Medicine Name</th>
+                  <th id="thStockQty2">Stock Quantity</th>
+                  <th id="thExpiry2">Expiry Date</th>
+                  <th id="thProvider2">Supplier / Provider</th>
+                  <th id="thHsn2">HSN Code</th>
+                  <th id="thLocation2">Shelf Location</th>
+                  <th id="thStatus2">Status</th>
+                  <th id="thActions2">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="stockLedgerTableBody">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
     </main>
 
     <!-- Add Medicine Modal -->
@@ -379,6 +429,32 @@
             </div>
           </div>
 
+          <div class="form-row">
+            <div class="form-group">
+              <label for="mImgUrl">Medicine Image URL</label>
+              <input type="url" id="mImgUrl" placeholder="https://images.unsplash.com/photo-...">
+            </div>
+            <div class="form-group">
+              <label for="mProviderName">Supplier / Provider Name</label>
+              <input type="text" id="mProviderName" value="Apex Pharma Distributors">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="mProviderContact">Provider Phone / Contact</label>
+              <input type="tel" id="mProviderContact" value="+91 9876543210">
+            </div>
+            <div class="form-group">
+              <label for="mHsnCode">HSN Code</label>
+              <input type="text" id="mHsnCode" value="30049099">
+            </div>
+            <div class="form-group">
+              <label for="mRackLocation">Shelf / Rack Location</label>
+              <input type="text" id="mRackLocation" value="Rack A-12">
+            </div>
+          </div>
+
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" onclick="closeAddMedicineModal()">Cancel</button>
             <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add to Inventory</button>
@@ -412,6 +488,34 @@
             <button type="submit" class="btn btn-emerald"><i class="fa-solid fa-arrow-up"></i> Update Stock</button>
           </div>
         </form>
+      </div>
+    <!-- Print Prescription Modal -->
+    <div id="printModal" class="modal-backdrop">
+      <div class="modal-content glass-card" style="max-width: 800px;">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-print"></i> Prescription Print Preview</h3>
+          <button class="close-btn" onclick="closePrintModal()">&times;</button>
+        </div>
+        
+        <div class="form-row" style="align-items: center; justify-content: space-between; margin-bottom: 16px;">
+          <div class="role-selector">
+            <button class="role-btn lang-btn active" id="langBtn-en" onclick="changePrintLang('en')">English</button>
+            <button class="role-btn lang-btn" id="langBtn-mr" onclick="changePrintLang('mr')">मराठी</button>
+            <button class="role-btn lang-btn" id="langBtn-hi" onclick="changePrintLang('hi')">हिंदी</button>
+          </div>
+          <button class="btn btn-primary" onclick="triggerPrint()">
+            <i class="fa-solid fa-print"></i> Print Prescription
+          </button>
+        </div>
+
+        <div id="printableRxArea">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <div class="modal-footer mt-4">
+          <button type="button" class="btn btn-secondary" onclick="closePrintModal()">Close Preview</button>
+          <button type="button" class="btn btn-emerald" onclick="triggerPrint()"><i class="fa-solid fa-print"></i> Print</button>
+        </div>
       </div>
     </div>
 

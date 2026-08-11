@@ -75,4 +75,5 @@ Backend and Frontend versions MUST be maintained in sync following **Semantic Ve
 
 | Version | Release Date | Component Scope | Summary of Changes |
 | :--- | :--- | :--- | :--- |
+| **v1.1.0** | 2026-08-10 | Fullstack (`backend` + `frontend`) | Added Multi-Language Prescription Printing (English, मराठी, हिंदी), Print-only CSS template, and UI screenshots to README.md. |
 | **v1.0.0** | 2026-08-10 | Fullstack (`backend` + `frontend`) | Initial release with Doctor Dashboard, Pharmacist Inventory, Dynamic Age Calculation, Dispense Queue, REST/GraphQL APIs, and Light/Dark mode. |

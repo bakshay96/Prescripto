@@ -91,6 +91,177 @@ let state = {
   ]
 };
 
+// i18n Dictionary for Vanilla Web App
+const I18N_DICT = {
+  en: {
+    hospitalName: "City Care Hospital & Medical Store",
+    hospitalSub: "108 Health Avenue • Phone: +91 98765 43210 • Reg: CL-2026-9081",
+    title: "MEDICAL PRESCRIPTION",
+    rxNum: "Prescription No:",
+    date: "Date:",
+    patient: "Patient Name:",
+    age: "Age:",
+    location: "Village / Location:",
+    diagnosis: "Clinical Diagnosis:",
+    medicinesTitle: "Prescribed Medicines & Dosage Instructions",
+    colMed: "Medicine Name",
+    colDosage: "Dosage",
+    colFreq: "Frequency",
+    colDuration: "Duration",
+    colInstructions: "Instructions",
+    docSig: "Doctor's Signature & Stamp",
+    disclaimer: "Note: Take medicines strictly as prescribed. Do not substitute without doctor's advice.",
+    freqMap: {
+      "1-0-1": "Morning & Night (1-0-1)",
+      "1-1-1": "Morning, Afternoon & Night (1-1-1)",
+      "1-0-0": "Morning Only (1-0-0)",
+      "0-0-1": "Night Only (0-0-1)"
+    }
+  },
+  mr: {
+    hospitalName: "सिटी केअर हॉस्पिटल आणि मेडिकल स्टोअर",
+    hospitalSub: "१०८ हेल्थ एव्हेन्यू • फोन: +९१ ९८७६५ ४३२१० • नोंदणी क्र: CL-2026-9081",
+    title: "वैद्यकीय चिठ्ठी (प्रिस्क्रिप्शन)",
+    rxNum: "प्रिस्क्रिप्शन क्रमांक:",
+    date: "दिनांक:",
+    patient: "रुग्णाचे नाव:",
+    age: "वय:",
+    location: "गाव / पत्ता:",
+    diagnosis: "निदान (आजाराचे स्वरूप):",
+    medicinesTitle: "औषधांचा सविस्तर तपशील आणि घेण्याच्या वेळा",
+    colMed: "औषधाचे नाव",
+    colDosage: "मात्रा (डोस)",
+    colFreq: "वेळा (वारंवारता)",
+    colDuration: "कालावधी",
+    colInstructions: "खास सूचना",
+    docSig: "डॉक्टरांची स्वाक्षरी व शिक्का",
+    disclaimer: "सूचना: औषधे दिलेल्या वेळेत व सूचनेनुसारच घ्यावीत. डॉक्टरांच्या सल्ल्याशिवाय बदल करू नये.",
+    freqMap: {
+      "1-0-1": "सकाळी व रात्री (१-०-१)",
+      "1-1-1": "सकाळी, दुपारी व रात्री (१-१-१)",
+      "1-0-0": "फक्त सकाळी (१-०-०)",
+      "0-0-1": "फक्त रात्री (०-०-१)"
+    }
+  },
+  hi: {
+    hospitalName: "सिटी केयर अस्पताल एवं मेडिकल स्टोर",
+    hospitalSub: "108 हेल्थ एवेन्यू • फोन: +91 98765 43210 • पंजीकरण सं: CL-2026-9081",
+    title: "चिकित्सकीय पर्चा (प्रिस्क्रिप्शन)",
+    rxNum: "पर्चा संख्या:",
+    date: "दिनांक:",
+    patient: "मरीज का नाम:",
+    age: "आयु / उम्र:",
+    location: "गांव / स्थान:",
+    diagnosis: "रोग निदान:",
+    medicinesTitle: "दवाइयों का विवरण एवं खुराक के निर्देश",
+    colMed: "दवा का नाम",
+    colDosage: "खुराक (डोज)",
+    colFreq: "बारंबरता (फ्रीक्वेंसी)",
+    colDuration: "अवधि",
+    colInstructions: "विशेष निर्देश",
+    docSig: "डॉक्टर के हस्ताक्षर एवं मुहर",
+    disclaimer: "नोट: दवाइयां बताई गई समयावधि और निर्देशानुसार ही लें। बिना सलाह दवाइयां न बदलें।",
+    freqMap: {
+      "1-0-1": "सुबह एवं रात (1-0-1)",
+      "1-1-1": "सुबह, दोपहर एवं रात (1-1-1)",
+      "1-0-0": "केवल सुबह (1-0-0)",
+      "0-0-1": "केवल रात (0-0-1)"
+    }
+  }
+};
+
+let currentPrintRx = null;
+let currentPrintLang = 'en';
+
+function openPrintModal(rxId) {
+  currentPrintRx = state.prescriptions.find(r => r.id === rxId) || state.prescriptions[0];
+  if (!currentPrintRx) return;
+  currentPrintLang = 'en';
+  renderPrintTemplate();
+  document.getElementById('printModal').classList.add('open');
+}
+
+function closePrintModal() {
+  document.getElementById('printModal').classList.remove('open');
+}
+
+function changePrintLang(lang) {
+  currentPrintLang = lang;
+  document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById(`langBtn-${lang}`).classList.add('active');
+  renderPrintTemplate();
+}
+
+function renderPrintTemplate() {
+  if (!currentPrintRx) return;
+  const dict = I18N_DICT[currentPrintLang] || I18N_DICT.en;
+  const rx = currentPrintRx;
+
+  const container = document.getElementById('printableRxArea');
+  container.innerHTML = `
+    <div class="print-rx-doc" style="background:#fff; color:#000; padding:24px; font-family:sans-serif;">
+      <div style="display:flex; justify-content:space-between; border-bottom:2px solid #0d9488; padding-bottom:12px; margin-bottom:16px;">
+        <div>
+          <h1 style="font-size:22px; font-weight:800; color:#0f766e; margin:0;">${dict.hospitalName}</h1>
+          <p style="font-size:12px; color:#475569; margin:4px 0 0;">${dict.hospitalSub}</p>
+        </div>
+        <div style="text-align:right;">
+          <span style="background:#ccfbf1; color:#0f766e; font-size:11px; font-weight:700; padding:4px 8px; border-radius:12px;">${dict.title}</span>
+          <p style="font-size:12px; margin:6px 0 0; color:#334155;"><strong>${dict.rxNum}</strong> ${rx.prescription_number}</p>
+          <p style="font-size:12px; margin:2px 0 0; color:#334155;"><strong>${dict.date}</strong> ${new Date(rx.created_at).toLocaleDateString()}</p>
+        </div>
+      </div>
+
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px; border-radius:8px; display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; font-size:12px; margin-bottom:16px;">
+        <div><span style="color:#64748b; display:block;">${dict.patient}</span><strong style="color:#0f172a;">${escapeHtml(rx.patient_name)}</strong></div>
+        <div><span style="color:#64748b; display:block;">${dict.age}</span><strong style="color:#0f172a;">29y 4m 16d</strong></div>
+        <div><span style="color:#64748b; display:block;">${dict.location}</span><strong style="color:#0f172a;">${escapeHtml(rx.village)}</strong></div>
+        <div><span style="color:#64748b; display:block;">${dict.diagnosis}</span><strong style="color:#0f172a;">${escapeHtml(rx.diagnosis)}</strong></div>
+      </div>
+
+      <div style="margin-bottom:24px;">
+        <h3 style="font-size:13px; font-weight:800; color:#1e293b; text-transform:uppercase; margin-bottom:8px;">${dict.medicinesTitle}</h3>
+        <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
+          <thead>
+            <tr style="background:#0f766e; color:#fff;">
+              <th style="padding:8px;">#</th>
+              <th style="padding:8px;">${dict.colMed}</th>
+              <th style="padding:8px;">${dict.colDosage}</th>
+              <th style="padding:8px;">${dict.colFreq}</th>
+              <th style="padding:8px;">${dict.colDuration}</th>
+              <th style="padding:8px;">${dict.colInstructions}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rx.items.map((item, idx) => `
+              <tr style="border-bottom:1px solid #e2e8f0; background: ${idx % 2 === 0 ? '#fff' : '#f8fafc'};">
+                <td style="padding:8px; font-weight:bold;">${idx + 1}</td>
+                <td style="padding:8px; font-weight:bold; color:#0f172a;">${escapeHtml(item.medicine_name)}</td>
+                <td style="padding:8px;">${item.dosage || '500mg'}</td>
+                <td style="padding:8px; font-weight:600; color:#0f766e;">${dict.freqMap[item.frequency] || item.frequency || '1-0-1'}</td>
+                <td style="padding:8px; font-weight:bold;">${item.duration_days || 3} Days</td>
+                <td style="padding:8px; color:#475569;">${item.instructions || 'After Meal'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px; align-items:end; margin-top:40px; border-top:1px solid #e2e8f0; padding-top:16px;">
+        <p style="font-size:11px; color:#64748b; font-style:italic;">${dict.disclaimer}</p>
+        <div style="text-align:right;">
+          <div style="border-bottom:1px dashed #94a3b8; width:150px; display:inline-block; margin-bottom:8px;"></div>
+          <p style="font-size:11px; font-weight:bold; margin:0;">${dict.docSig}</p>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function triggerPrint() {
+  window.print();
+}
+
 // Initialize Application
 document.addEventListener('DOMContentLoaded', () => {
   initApp();
@@ -107,14 +278,60 @@ function initApp() {
   addPrescriptionItemRow(); // Initial medicine row in Rx form
 }
 
-// Switch Role (DOCTOR vs PHARMACIST)
+let currentAppLanguage = 'en';
+
+function setAppLanguage(lang) {
+  currentAppLanguage = lang;
+  document.querySelectorAll('.lang-select-btn').forEach(btn => btn.classList.remove('active'));
+  const activeBtn = document.getElementById(`appLang-${lang}`);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  const dict = I18N_DICT[lang] || I18N_DICT.en;
+
+  // Update UI Labels
+  const setTxt = (id, txt) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = txt;
+  };
+
+  setTxt('lblNavDoctor', dict.doctorView);
+  setTxt('lblNavPharmacy', dict.pharmacistView);
+  setTxt('lblNavStock', dict.stockPageView);
+  setTxt('lblApiStatus', dict.backendConnected);
+  setTxt('lblStockLedgerTitle', dict.stockLedgerTitle);
+  setTxt('lblStockLedgerSub', dict.stockLedgerSub);
+
+  // Table Headers
+  setTxt('thImg2', dict.thImg);
+  setTxt('thMedName2', dict.thMedName);
+  setTxt('thStockQty2', dict.thStockQty);
+  setTxt('thExpiry2', dict.thExpiry);
+  setTxt('thProvider2', dict.thProvider);
+  setTxt('thStatus2', dict.thStatus);
+  setTxt('thActions2', dict.thActions);
+
+  renderPatientsTable();
+  renderInventoryTable();
+  renderStockLedgerTable();
+  renderPrescriptionsTable();
+  renderDispenseQueue();
+  updateMetrics();
+}
+
+// Switch Role (DOCTOR, PHARMACIST, STOCK)
 function switchRole(role) {
   state.currentRole = role;
   document.getElementById('roleDoctorBtn').classList.toggle('active', role === 'DOCTOR');
   document.getElementById('rolePharmacistBtn').classList.toggle('active', role === 'PHARMACIST');
+  document.getElementById('roleStockBtn').classList.toggle('active', role === 'STOCK');
   
   document.getElementById('doctorDashboard').classList.toggle('active', role === 'DOCTOR');
   document.getElementById('pharmacistDashboard').classList.toggle('active', role === 'PHARMACIST');
+  document.getElementById('stockDashboard').classList.toggle('active', role === 'STOCK');
+
+  if (role === 'STOCK') {
+    renderStockLedgerTable();
+  }
 }
 
 // Toggle Light / Dark Mode
@@ -377,6 +594,11 @@ function renderPrescriptionsTable(statusFilter = '') {
         </span>
       </td>
       <td>${new Date(rx.created_at).toLocaleDateString()}</td>
+      <td>
+        <button class="btn btn-sm btn-secondary" onclick="openPrintModal('${rx.id}')">
+          <i class="fa-solid fa-print"></i> Print
+        </button>
+      </td>
     </tr>
   `).join('');
 }
@@ -396,25 +618,32 @@ function filterRxStatus(status, btnElement) {
 // Render Pharmacy Inventory Table
 function renderInventoryTable() {
   const tbody = document.getElementById('inventoryTableBody');
-  const search = document.getElementById('inventorySearch').value.toLowerCase();
-  const cat = document.getElementById('inventoryCategoryFilter').value;
+  const searchInput = document.getElementById('inventorySearch');
+  const search = searchInput ? searchInput.value.toLowerCase() : '';
+  const catInput = document.getElementById('inventoryCategoryFilter');
+  const cat = catInput ? catInput.value : '';
 
   const filtered = state.medicines.filter(m => 
     (!cat || m.category === cat) &&
-    (m.name.toLowerCase().includes(search) || m.batch_number.toLowerCase().includes(search))
+    (m.name.toLowerCase().includes(search) || m.batch_number.toLowerCase().includes(search) || (m.hsn_code && m.hsn_code.includes(search)))
   );
+
+  const dict = I18N_DICT[currentAppLanguage] || I18N_DICT.en;
 
   if (filtered.length === 0) {
     tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color: var(--text-muted);">No medicines in inventory</td></tr>`;
     return;
   }
 
+  const defaultImg = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=100&auto=format&fit=crop&q=60";
+
   tbody.innerHTML = filtered.map(m => {
     const isLow = m.stock_quantity <= m.min_stock_alert;
     const isExp = new Date(m.expiry_date) < new Date();
+    const img = m.image_url || defaultImg;
     
     return `
-      <tr>
+      <tr style="${isExp ? 'background: rgba(239, 68, 68, 0.08);' : ''}">
         <td><strong>${escapeHtml(m.name)}</strong></td>
         <td><span class="badge badge-indigo">${escapeHtml(m.category)}</span></td>
         <td>
@@ -426,13 +655,79 @@ function renderInventoryTable() {
         <td>${m.expiry_date}</td>
         <td><code>${m.batch_number}</code></td>
         <td>
-          ${isExp ? '<span class="badge badge-crimson">Expired</span>' : 
-            isLow ? '<span class="badge badge-amber">Low Stock</span>' : 
-            '<span class="badge badge-teal">In Stock</span>'}
+          ${isExp ? `<span class="badge badge-red-flag">${dict.statusExpiredRedFlag}</span>` : 
+            isLow ? `<span class="badge badge-amber">${dict.statusLowStock}</span>` : 
+            `<span class="badge badge-teal">${dict.statusAvailable}</span>`}
         </td>
         <td>
           <button class="btn btn-sm btn-primary" onclick="openRestockModal('${m.id}')">
             <i class="fa-solid fa-plus"></i> Restock
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// Render Dedicated Stock & Restock Page Table
+function renderStockLedgerTable() {
+  const tbody = document.getElementById('stockLedgerTableBody');
+  if (!tbody) return;
+
+  const searchInput = document.getElementById('stockSearchInput');
+  const search = searchInput ? searchInput.value.toLowerCase() : '';
+
+  const filtered = state.medicines.filter(m => 
+    !search || 
+    m.name.toLowerCase().includes(search) || 
+    m.batch_number.toLowerCase().includes(search) ||
+    (m.provider_name && m.provider_name.toLowerCase().includes(search)) ||
+    (m.hsn_code && m.hsn_code.includes(search))
+  );
+
+  const dict = I18N_DICT[currentAppLanguage] || I18N_DICT.en;
+  const defaultImg = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=100&auto=format&fit=crop&q=60";
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color: var(--text-muted);">No stock ledger records found</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(m => {
+    const isLow = m.stock_quantity <= m.min_stock_alert;
+    const isExp = new Date(m.expiry_date) < new Date();
+    const img = m.image_url || defaultImg;
+    const provider = m.provider_name || "Apex Pharma Distributors";
+    const hsn = m.hsn_code || "30049099";
+    const rack = m.rack_location || "Rack A-12";
+
+    return `
+      <tr style="${isExp ? 'background: rgba(239, 68, 68, 0.08);' : ''}">
+        <td><img src="${img}" class="table-med-img" alt="Med"></td>
+        <td>
+          <strong style="font-size:14px;">${escapeHtml(m.name)}</strong>
+          <span style="display:block; font-size:11px; color:var(--text-muted);">${escapeHtml(m.category)} • ${m.unit}</span>
+        </td>
+        <td>
+          <strong style="font-size:15px; color: ${isLow ? '#f87171' : '#34d399'};">${m.stock_quantity}</strong>
+        </td>
+        <td>
+          <span style="color: ${isExp ? '#f87171' : 'inherit'}; font-weight: 600;">${m.expiry_date}</span>
+        </td>
+        <td>
+          <strong>${escapeHtml(provider)}</strong>
+          <span style="display:block; font-size:11px; color:var(--text-muted);">${escapeHtml(m.provider_contact || '+91 9876543210')}</span>
+        </td>
+        <td><code>${hsn}</code></td>
+        <td><span class="badge badge-indigo">${rack}</span></td>
+        <td>
+          ${isExp ? `<span class="badge badge-red-flag">${dict.statusExpiredRedFlag}</span>` : 
+            isLow ? `<span class="badge badge-amber">${dict.statusLowStock}</span>` : 
+            `<span class="badge badge-teal">${dict.statusAvailable}</span>`}
+        </td>
+        <td>
+          <button class="btn btn-sm btn-emerald" onclick="openRestockModal('${m.id}')">
+            <i class="fa-solid fa-plus"></i> ${dict.restockBtn}
           </button>
         </td>
       </tr>
@@ -541,6 +836,12 @@ function handleAddMedicine(event) {
   const unit = document.getElementById('mUnit').value;
   const alertVal = parseInt(document.getElementById('mAlert').value);
 
+  const imgEl = document.getElementById('mImgUrl');
+  const providerEl = document.getElementById('mProviderName');
+  const contactEl = document.getElementById('mProviderContact');
+  const hsnEl = document.getElementById('mHsnCode');
+  const rackEl = document.getElementById('mRackLocation');
+
   const newMed = {
     id: 'm-' + Date.now(),
     name,
@@ -550,7 +851,12 @@ function handleAddMedicine(event) {
     expiry_date: expiry,
     batch_number: batch,
     unit,
-    min_stock_alert: alertVal
+    min_stock_alert: alertVal,
+    image_url: imgEl ? imgEl.value.trim() : null,
+    provider_name: providerEl ? providerEl.value.trim() : "Apex Pharma Distributors",
+    provider_contact: contactEl ? contactEl.value.trim() : "+91 9876543210",
+    hsn_code: hsnEl ? hsnEl.value.trim() : "30049099",
+    rack_location: rackEl ? rackEl.value.trim() : "Rack A-12"
   };
 
   state.medicines.unshift(newMed);
@@ -558,6 +864,7 @@ function handleAddMedicine(event) {
   document.getElementById('addMedicineForm').reset();
 
   renderInventoryTable();
+  renderStockLedgerTable();
   updateMetrics();
   alert(`Medicine ${name} added to store inventory!`);
 }
@@ -589,6 +896,7 @@ function handleRestockSubmit(event) {
 
   closeRestockModal();
   renderInventoryTable();
+  renderStockLedgerTable();
   renderDispenseQueue();
   updateMetrics();
 }

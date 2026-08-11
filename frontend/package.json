@@ -1,11 +1,12 @@
 {
   "name": "prescripto-frontend",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Prescripto Doctor Prescription & Pharmacy Management Frontend Web Application",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "serve": "npx -y serve .",
     "lint": "next lint"
   },
   "dependencies": {

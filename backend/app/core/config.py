@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Prescripto - Doctor Prescription & Pharmacy Management System"
-    VERSION: str = "1.0.0"
+    VERSION: str = "1.1.0"
     API_V1_STR: str = "/api/v1"
     
     SECRET_KEY: str = "prescripto_super_secret_key_change_in_production_2026"
@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     MONGODB_URL: str = "mongodb://localhost:27017"
     MONGODB_DB_NAME: str = "prescripto_db"
 
-    model_config = SettingsConfigDict(case_sensitive=True, env_file=".env")
+    HOST: str = "127.0.0.1"
+    PORT: int = 8080
+
+    model_config = SettingsConfigDict(case_sensitive=True, env_file=".env", extra="ignore")
 
 settings = Settings()

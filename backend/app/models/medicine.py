@@ -24,6 +24,11 @@ class Medicine(Base):
     batch_number = Column(String(50), nullable=False)
     unit = Column(String(20), nullable=False, default="Tablets")
     min_stock_alert = Column(Integer, nullable=False, default=10)
+    image_url = Column(String(500), nullable=True)
+    provider_name = Column(String(200), nullable=True, default="Apex Pharma Distributors")
+    provider_contact = Column(String(100), nullable=True, default="+91 9876543210")
+    hsn_code = Column(String(50), nullable=True, default="30049099")
+    rack_location = Column(String(50), nullable=True, default="Rack A-12")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
