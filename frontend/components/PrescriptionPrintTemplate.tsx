@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Language, TRANSLATIONS } from "../utils/i18n";
+import { Language, TRANSLATIONS, translateInstruction } from "../utils/i18n";
 
 export interface PrescriptionItemPrint {
   medicineName: string;
