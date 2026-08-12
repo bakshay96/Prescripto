@@ -241,14 +241,38 @@ function seedDemoData() {
 }
 
 /* ═══════════════════════════════════════════════════════
-   5. ROUTER
+   5. ROUTER — Bulletproof View Isolation
+   Each .view is position:fixed full-screen. Only .active is shown.
+   Body is overflow:hidden — views scroll independently.
    ═══════════════════════════════════════════════════════ */
 function navigate(view) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  // Hide all views
+  document.querySelectorAll('.view').forEach(v => {
+    v.classList.remove('active');
+  });
+
+  // Show target view
   const el = document.getElementById('view-' + view);
-  if (el) { el.classList.add('active'); State.currentView = view; }
-  // Scroll to top
-  window.scrollTo(0, 0);
+  if (!el) {
+    console.warn('[Router] View not found: view-' + view);
+    return;
+  }
+  el.classList.add('active');
+  State.currentView = view;
+
+  // Scroll the view container back to top (body is overflow:hidden)
+  el.scrollTop = 0;
+
+  // Update page title
+  const titles = {
+    landing: 'Prescripto — Hospital Management Platform',
+    login: 'Login — Prescripto',
+    register: 'Register — Prescripto',
+    doctor: 'Doctor Dashboard — Prescripto',
+    pharmacist: 'Pharmacist Dashboard — Prescripto',
+    'master-admin': 'Master Admin — Prescripto'
+  };
+  document.title = titles[view] || 'Prescripto';
 }
 
 function routeByRole(role) {
@@ -259,6 +283,7 @@ function routeByRole(role) {
     default:             navigate('landing');
   }
 }
+
 
 /* ═══════════════════════════════════════════════════════
    6. AUTH
@@ -1441,9 +1466,22 @@ function closeSidebar() {
   if (overlay) overlay.classList.remove('open');
 }
 
+/* ── Smooth scroll within fixed view (anchor links work correctly) ── */
+function smoothScrollTo(anchorId) {
+  // The landing view is position:fixed with overflow-y:auto
+  // We must scroll the view element, not window
+  const view = document.getElementById('view-landing');
+  const target = document.getElementById(anchorId);
+  if (!view || !target) return;
+  // Get target's offset from the top of the scrollable view container
+  const targetTop = target.getBoundingClientRect().top + view.scrollTop - view.getBoundingClientRect().top;
+  view.scrollTo({ top: targetTop - 64, behavior: 'smooth' }); // 64 = nav height
+}
+
 /* ── Mobile Menu ── */
 function openMobileMenu() { const m = document.getElementById('mobileMenu'); if(m) m.classList.add('open'); }
 function closeMobileMenu() { const m = document.getElementById('mobileMenu'); if(m) m.classList.remove('open'); }
+
 
 /* ── Toast ── */
 function toast(msg, type = 'success') {
