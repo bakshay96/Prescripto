@@ -49,3 +49,15 @@ def require_pharmacist(current_user: User = Depends(get_current_user)) -> User:
             detail="Access forbidden: Pharmacist or Admin role required"
         )
     return current_user
+
+def require_master_admin(current_user: User = Depends(get_current_user)) -> User:
+    if current_user.role != UserRole.MASTER_ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access forbidden: Master Admin role required"
+        )
+    return current_user
+
+def require_any_role(current_user: User = Depends(get_current_user)) -> User:
+    """Allows any authenticated user (Doctor, Pharmacist, or Master Admin)."""
+    return current_user
