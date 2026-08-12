@@ -11,6 +11,7 @@ def generate_uuid():
 class UserRole(str, enum.Enum):
     DOCTOR = "DOCTOR"
     PHARMACIST = "PHARMACIST"
+    MASTER_ADMIN = "MASTER_ADMIN"
 
 class User(Base):
     __tablename__ = "users"
@@ -23,6 +24,7 @@ class User(Base):
     role = Column(Enum(UserRole), nullable=False, default=UserRole.DOCTOR)
     license_number = Column(String(50), nullable=True)
     is_active = Column(Boolean, default=True)
+    is_store_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relationships
