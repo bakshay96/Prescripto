@@ -29,9 +29,9 @@
 <!-- Mobile Menu (Landing) -->
 <div class="mobile-menu" id="mobileMenu">
   <button class="mobile-menu-close" onclick="closeMobileMenu()"><i class="fa-solid fa-xmark"></i></button>
-  <a href="#features" onclick="closeMobileMenu()">Features</a>
-  <a href="#roles" onclick="closeMobileMenu()">Who it's for</a>
-  <a href="#pricing" onclick="closeMobileMenu()">Pricing</a>
+  <a href="javascript:void(0)" onclick="closeMobileMenu(); smoothScrollTo('features')">Features</a>
+  <a href="javascript:void(0)" onclick="closeMobileMenu(); smoothScrollTo('roles')">Who it's for</a>
+  <a href="javascript:void(0)" onclick="closeMobileMenu(); smoothScrollTo('pricing')">Pricing</a>
   <button class="btn btn-secondary" onclick="closeMobileMenu(); navigate('login')">Login</button>
   <button class="btn btn-primary" onclick="closeMobileMenu(); navigate('register')">Register Free</button>
 </div>
@@ -56,9 +56,9 @@
         Prescripto
       </div>
       <div class="nav-links">
-        <a href="#features">Features</a>
-        <a href="#roles">Solutions</a>
-        <a href="#pricing">Pricing</a>
+        <a href="javascript:void(0)" onclick="smoothScrollTo('features')">Features</a>
+        <a href="javascript:void(0)" onclick="smoothScrollTo('roles')">Solutions</a>
+        <a href="javascript:void(0)" onclick="smoothScrollTo('pricing')">Pricing</a>
       </div>
       <div class="nav-actions">
         <button class="btn btn-ghost btn-sm" onclick="navigate('login')">Login</button>
@@ -419,7 +419,7 @@
         <div class="dashboard-content">
 
           <!-- ── Dr Panel: Overview ── -->
-          <div id="dr-panel-overview" class="animate-fade-up">
+          <div id="dr-panel-overview" style="display:none;" class="animate-fade-up">
             <div class="metrics-grid">
               <div class="metric-card" style="--metric-bg: rgba(16,185,129,0.12); --metric-color-text: #10b981;">
                 <div class="metric-icon"><i class="fa-solid fa-users"></i></div>
@@ -729,7 +729,7 @@
         <div class="dashboard-content">
 
           <!-- ── Pharm Panel: Inventory ── -->
-          <div id="ph-panel-inventory" class="animate-fade-up">
+          <div id="ph-panel-inventory" style="display:none;" class="animate-fade-up">
             <div class="section-card">
               <div class="section-card-header">
                 <div class="section-card-title">
@@ -907,7 +907,7 @@
         <div class="dashboard-content">
 
           <!-- ── Admin Panel: Overview ── -->
-          <div id="ma-panel-overview" class="animate-fade-up">
+          <div id="ma-panel-overview" style="display:none;" class="animate-fade-up">
             <div class="admin-stat-grid">
               <div class="metric-card" style="--metric-bg: rgba(16,185,129,0.12); --metric-color-text: #10b981;">
                 <div class="metric-icon"><i class="fa-solid fa-hospital"></i></div>
