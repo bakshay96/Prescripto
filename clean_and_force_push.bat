@@ -1,17 +1,20 @@
 @echo off
 echo =====================================================
-echo   PRESCRIPTO - SAFE GIT PUSH TO NEW BRANCH
+echo   REMOVING SECRETS FROM GIT & FORCE PUSHING TO GITHUB
 echo =====================================================
 cd /d "%~dp0"
+
 git rm --cached backend/.env -f >nul 2>&1
 git rm --cached frontend/.env.local -f >nul 2>&1
+git rm --cached frontend/.env -f >nul 2>&1
 git rm --cached .env -f >nul 2>&1
 
-git checkout -b mongodb-migration-complete 2>nul || git checkout mongodb-migration-complete
+git add .gitignore
 git add .
-git commit -m "feat: complete SQLite to pure MongoDB migration, API fixes, and Master Admin dashboard"
-git push -u origin mongodb-migration-complete
+git commit -m "security: remove sensitive environment files and credentials from repository"
+git push --force origin mongodb-migration-complete
+
 echo =====================================================
-echo   SUCCESSFULLY PUSHED TO BRANCH mongodb-migration-complete
+echo   SUCCESS! SECRETS REMOVED & BRANCH CLEANED ON GITHUB
 echo =====================================================
 pause
