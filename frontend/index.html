@@ -418,8 +418,121 @@
 
         <div class="dashboard-content">
 
+
+          <!-- ── Dr Panel: My Profile ── -->
+          <div id="dr-panel-profile" style="display:none;" class="animate-fade-up">
+
+            <!-- Profile Header Card -->
+            <div class="profile-header-card">
+              <div class="flex items-center gap-4" style="flex-wrap:wrap;">
+                <div class="profile-avatar-large" id="profileAvatarDisplay">DR</div>
+                <div style="flex:1;">
+                  <div style="font-size:22px; font-weight:800;" id="profileDisplayName">Dr. Rajesh Sharma</div>
+                  <div style="font-size:14px; color:var(--text-secondary);" id="profileDisplayQual">M.B.B.S.</div>
+                  <div class="profile-badge"><i class="fa-solid fa-hospital"></i> <span id="profileDisplayClinic">City Care Hospital</span></div>
+                </div>
+                <button class="btn btn-primary" onclick="saveDoctorProfile()">
+                  <i class="fa-solid fa-floppy-disk"></i> Save Profile
+                </button>
+              </div>
+              <!-- Prescription preview strip -->
+              <div class="rx-preview-box" style="margin-top:16px;">
+                <div style="display:flex;justify-content:space-between;">
+                  <div style="font-size:16px;font-weight:900;color:#dc2626;" id="prevHospName">Hospital Name</div>
+                  <div style="text-align:right;font-size:11px;">
+                    <div style="font-weight:800;" id="prevDocName">Dr. Name</div>
+                    <div style="color:#64748b;" id="prevDocQual">M.B.B.S.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);">
+              <!-- Left: Basic Info -->
+              <div class="section-card" style="padding:var(--space-5);">
+                <div class="section-card-title" style="margin-bottom:var(--space-4);">
+                  <div class="title-icon icon-teal"><i class="fa-solid fa-hospital"></i></div>
+                  Hospital & Doctor Details
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Hospital / Clinic Name <span class="required">*</span></label>
+                  <input class="form-control" id="profHospitalName" type="text" placeholder="e.g. Suyog Hospital / सुयोग हॉस्पिटल" oninput="liveProfilePreview()">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Doctor Full Name <span class="required">*</span></label>
+                  <input class="form-control" id="profDoctorName" type="text" placeholder="e.g. Dr. Vikas V. Karande" oninput="liveProfilePreview()">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Qualifications</label>
+                  <input class="form-control" id="profQualifications" type="text" placeholder="e.g. M.B.B.S. (MUHS NASIK), MS Surgery" oninput="liveProfilePreview()">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Registration Number</label>
+                  <input class="form-control" id="profRegNo" type="text" placeholder="e.g. Reg. No. 98203ML2411">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Specialties (comma separated)</label>
+                  <input class="form-control" id="profSpecialties" type="text" placeholder="e.g. General Physician & Surgeon, Orthopaedics">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Clinic Hours</label>
+                  <input class="form-control" id="profClinicHours" type="text" placeholder="e.g. सकाळी ९ ते सायं. ६">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Hospital Address</label>
+                  <textarea class="form-control" id="profAddress" rows="2" placeholder="Full address for prescription footer"></textarea>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Phone / Mobile</label>
+                  <input class="form-control" id="profPhone" type="text" placeholder="e.g. मोबा. नं. 7757003800">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">UHID Prefix</label>
+                  <input class="form-control" id="profUhidPrefix" type="text" placeholder="e.g. U.H.I.D." value="U.H.I.D.">
+                </div>
+              </div>
+              <!-- Right: Facilities List -->
+              <div class="section-card" style="padding:var(--space-5);">
+                <div class="section-card-title" style="margin-bottom:var(--space-4);">
+                  <div class="title-icon" style="background:rgba(220,38,38,0.12);"><i class="fa-solid fa-list-check" style="color:#ef4444;"></i></div>
+                  उपलब्ध सुविधा (Available Facilities)
+                </div>
+                <p class="text-xs text-muted" style="margin-bottom:var(--space-3);">These appear on the left sidebar of printed prescriptions</p>
+                <div class="facilities-list-editor" id="facilitiesListEditor"></div>
+                <button type="button" class="btn btn-secondary btn-sm" style="margin-top:var(--space-3);" onclick="addFacilityItem()">
+                  <i class="fa-solid fa-plus"></i> Add Facility
+                </button>
+                <div class="form-group" style="margin-top:var(--space-4);">
+                  <label class="form-label">Prescription Language Default</label>
+                  <select class="form-control" id="profDefaultLang">
+                    <option value="en">English</option>
+                    <option value="mr" selected>Marathi (मराठी)</option>
+                    <option value="hi">Hindi (हिंदी)</option>
+                  </select>
+                </div>
+                <!-- Sample Prescription Preview -->
+                <div style="margin-top:var(--space-4); padding:var(--space-4); background:rgba(220,38,38,0.05); border:1px solid rgba(220,38,38,0.2); border-radius:var(--radius-md);">
+                  <div style="font-size:12px; font-weight:700; color:#ef4444; margin-bottom:var(--space-2);">
+                    <i class="fa-solid fa-eye"></i> Prescription Header Preview
+                  </div>
+                  <div style="background:white;color:#1a1a2e;padding:10px;border-radius:6px;font-size:11px;">
+                    <div style="background:#dc2626;color:white;padding:8px 12px;border-radius:4px;display:flex;justify-content:space-between;align-items:start;margin-bottom:4px;">
+                      <div style="font-size:14px;font-weight:900;" id="prevHospName2">Hospital Name</div>
+                      <div style="text-align:right;">
+                        <div style="font-weight:800;" id="prevDocName2">Dr. Name</div>
+                        <div style="font-size:9px;opacity:0.8;" id="prevDocQual2">Qualifications</div>
+                      </div>
+                    </div>
+                    <div style="color:#dc2626;font-size:9px;">Facilities sidebar | Rx table | Address footer</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- ── Dr Panel: Overview ── -->
           <div id="dr-panel-overview" style="display:none;" class="animate-fade-up">
+
             <div class="metrics-grid">
               <div class="metric-card" style="--metric-bg: rgba(16,185,129,0.12); --metric-color-text: #10b981;">
                 <div class="metric-icon"><i class="fa-solid fa-users"></i></div>
@@ -526,37 +639,76 @@
                   <div class="title-icon icon-teal"><i class="fa-solid fa-prescription"></i></div>
                   <span id="lbl-create-rx">Create Prescription</span>
                 </div>
-                <span class="badge badge-teal" id="lbl-doctor-badge">Doctor Access</span>
-              </div>
-              <form id="prescriptionForm" onsubmit="handleGenerateRx(event)">
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label" id="lbl-select-patient">Select Patient <span class="required">*</span></label>
-                    <select class="form-control" id="rxPatientSelect" required>
-                      <option value="">— Select Patient —</option>
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label" id="lbl-diagnosis">Diagnosis <span class="required">*</span></label>
-                    <input class="form-control" id="rxDiagnosis" type="text" placeholder="e.g. Viral Fever, Common Cold" required>
-                  </div>
+                <div class="flex gap-2 items-center">
+                  <span class="badge badge-teal" id="lbl-doctor-badge">Doctor Access</span>
+                  <button type="button" class="rx-preview-btn" onclick="openDrProfilePanel()">
+                    <i class="fa-solid fa-hospital"></i> My Profile
+                  </button>
                 </div>
-                <div class="form-group">
-                  <label class="form-label" id="lbl-rx-notes">Doctor Notes / Dietary Advice</label>
-                  <textarea class="form-control" id="rxNotes" placeholder="e.g. Drink plenty of water, avoid oily food..."></textarea>
+              </div>
+              <form id="prescriptionForm" onsubmit="handleGenerateRx(event)" style="padding:var(--space-4) 0;">
+
+                <!-- Patient Selection with inline add -->
+                <div class="form-group" style="margin-bottom:var(--space-4);">
+                  <label class="form-label" id="lbl-select-patient">Select Patient <span class="required">*</span></label>
+                  <div class="flex gap-2 items-start" style="flex-wrap:wrap;">
+                    <div style="flex:1; min-width:200px;">
+                      <select class="form-control" id="rxPatientSelect" onchange="onPatientSelectChange()" required>
+                        <option value="">— Select Patient —</option>
+                      </select>
+                      <!-- Inline add if not found -->
+                      <div class="patient-not-found-hint" id="patientNotFoundHint" style="display:none;">
+                        <span class="text-xs text-muted">Patient not in list?</span>
+                        <button type="button" class="btn-add-inline" onclick="openAddPatientFromRx()">
+                          <i class="fa-solid fa-user-plus"></i> Add New Patient
+                        </button>
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="openAddPatientFromRx()" title="Register new patient">
+                      <i class="fa-solid fa-user-plus"></i>
+                    </button>
+                  </div>
                 </div>
 
-                <div style="margin: var(--space-5) 0 var(--space-3);">
-                  <div class="flex items-center justify-between mb-4">
+                <div class="form-row" style="margin-bottom:var(--space-4);">
+                  <div class="form-group">
+                    <label class="form-label" id="lbl-diagnosis">Diagnosis <span class="required">*</span></label>
+                    <input class="form-control" id="rxDiagnosis" type="text" placeholder="e.g. Viral Fever / सर्दी ताप" required>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input class="form-control" id="rxDate" type="date">
+                  </div>
+                </div>
+
+                <!-- Medicine Rows Header -->
+                <div style="margin-bottom:var(--space-3);">
+                  <div class="flex items-center justify-between" style="margin-bottom:var(--space-2);">
                     <label class="form-label" style="margin:0;" id="lbl-prescribed-meds">Prescribed Medicines</label>
                     <button type="button" class="btn btn-secondary btn-sm" onclick="addRxRow()">
                       <i class="fa-solid fa-plus"></i> <span id="lbl-add-med-row">Add Medicine</span>
                     </button>
                   </div>
+                  <!-- Column headers -->
+                  <div style="display:grid;grid-template-columns:40px 100px 1fr 80px 80px 80px 80px 40px;gap:8px;padding:6px 16px;font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;" class="rx-col-headers">
+                    <div>#</div>
+                    <div>Type</div>
+                    <div>Medicine Name</div>
+                    <div style="text-align:center;">सकाळी<br><span style="font-size:9px;">(Morning)</span></div>
+                    <div style="text-align:center;">दुपारी<br><span style="font-size:9px;">(Noon)</span></div>
+                    <div style="text-align:center;">रात्री<br><span style="font-size:9px;">(Night)</span></div>
+                    <div style="text-align:center;">दिवस<br><span style="font-size:9px;">(Days)</span></div>
+                    <div></div>
+                  </div>
                   <div id="rxItemsContainer"></div>
                 </div>
 
-                <div class="flex gap-3" style="flex-wrap: wrap;">
+                <div class="form-group">
+                  <label class="form-label" id="lbl-rx-notes">सूचना / Advice / Doctor Notes</label>
+                  <textarea class="form-control" id="rxNotes" rows="3" placeholder="e.g. Drink plenty of water. Avoid oily food. Rest advised. / पुरेसे पाणी प्या. तळलेले खाऊ नका."></textarea>
+                </div>
+
+                <div class="flex gap-3" style="flex-wrap:wrap; margin-top:var(--space-4);">
                   <button type="submit" class="btn btn-primary">
                     <i class="fa-solid fa-check-circle"></i> <span id="lbl-generate-rx">Issue Prescription</span>
                   </button>
