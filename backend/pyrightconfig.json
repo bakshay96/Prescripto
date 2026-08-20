@@ -1,0 +1,13 @@
+{
+  "pythonVersion": "3.11",
+  "pythonPlatform": "Windows",
+  "venvPath": "C:\\Users\\FreshMenu\\AppData\\Local\\Programs\\Python\\Python311",
+  "pythonPath": "C:\\Users\\FreshMenu\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+  "typeCheckingMode": "basic",
+  "reportMissingModuleSource": "none",
+  "reportMissingImports": "none",
+  "reportOptionalMemberAccess": "none",
+  "extraPaths": [
+    "D:\\MASAI\\Prescripto\\backend"
+  ]
+}

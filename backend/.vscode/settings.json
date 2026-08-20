@@ -1,0 +1,14 @@
+{
+  "python.defaultInterpreterPath": "C:\\Users\\FreshMenu\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+  "python.analysis.pythonPath": "C:\\Users\\FreshMenu\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+  "python.analysis.extraPaths": [
+    "D:\\MASAI\\Prescripto\\backend"
+  ],
+  "python.analysis.typeCheckingMode": "off",
+  "python.analysis.diagnosticMode": "workspace",
+  "python.analysis.reportMissingImports": "none",
+  "python.analysis.reportMissingModuleSource": "none",
+  "python.linting.enabled": false,
+  "python.languageServer": "Pylance",
+  "editor.formatOnSave": false
+}
