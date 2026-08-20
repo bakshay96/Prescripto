@@ -33,7 +33,8 @@ out/
 dist/
 .DS_Store
 
-# Temporary & Test Scripts
+# Temporary & Helper Scripts (NEVER COMMIT)
 scratch/
-start_backend.bat
+*.ps1
+*.bat
 test_*.py
