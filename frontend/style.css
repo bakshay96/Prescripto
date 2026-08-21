@@ -1631,3 +1631,146 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 [data-theme="light"] .sidebar { background: rgba(255,255,255,0.95); }
 [data-theme="light"] .dashboard-topbar { background: rgba(248,250,252,0.9); }
 [data-theme="light"] .data-table th { background: rgba(0,0,0,0.03); }
+
+/* ── 25. UX4G (USER EXPERIENCE FOR GOVERNMENT) COMPONENT DESIGN SYSTEM ── */
+
+.ux4g-theme-govblue {
+  --ux4g-primary: #005691;
+  --ux4g-saffron: #ff671f;
+  --ux4g-green: #046a38;
+  --ux4g-navy: #0b192c;
+  --ux4g-surface: #1e3e62;
+  --ux4g-card-bg: #1e3e62;
+  --ux4g-border: #005691;
+  --ux4g-text: #ffffff;
+  --ux4g-text-muted: #90caf9;
+}
+
+/* UX4G Button Standards */
+.ux4g-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-family: 'Noto Sans Devanagari', 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+  outline: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+.ux4g-btn-primary {
+  background: linear-gradient(135deg, #005691 0%, #0b192c 100%);
+  color: #ffffff;
+  border-color: #005691;
+}
+.ux4g-btn-primary:hover {
+  background: linear-gradient(135deg, #0b192c 0%, #005691 100%);
+  box-shadow: 0 4px 14px rgba(0,86,145,0.4);
+}
+.ux4g-btn-saffron {
+  background: linear-gradient(135deg, #ff671f 0%, #c41e3a 100%);
+  color: #ffffff;
+  border-color: #ff671f;
+}
+.ux4g-btn-saffron:hover {
+  background: linear-gradient(135deg, #c41e3a 0%, #ff671f 100%);
+  box-shadow: 0 4px 14px rgba(255,103,31,0.4);
+}
+.ux4g-btn-green {
+  background: linear-gradient(135deg, #046a38 0%, #052e16 100%);
+  color: #ffffff;
+  border-color: #046a38;
+}
+.ux4g-btn-green:hover {
+  background: linear-gradient(135deg, #052e16 0%, #046a38 100%);
+  box-shadow: 0 4px 14px rgba(4,106,56,0.4);
+}
+.ux4g-btn-outline {
+  background: transparent;
+  color: var(--rx-text);
+  border-color: var(--rx-border);
+}
+.ux4g-btn-outline:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: #ff671f;
+}
+
+/* UX4G Card System */
+.ux4g-card {
+  background: var(--rx-card, #0f172a);
+  border: 1px solid var(--rx-border, #1e293b);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.ux4g-card:hover {
+  border-color: rgba(255,103,31,0.3);
+}
+.ux4g-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--rx-border, #1e293b);
+}
+.ux4g-card-title {
+  font-family: 'Noto Sans Devanagari', 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--rx-text, #ffffff);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* UX4G Form Inputs */
+.ux4g-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--rx-input-border, #334155);
+  background: var(--rx-input-bg, #020617);
+  color: var(--rx-input-text, #ffffff);
+  font-family: 'Noto Sans Devanagari', 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.ux4g-input:focus {
+  outline: none;
+  border-color: #ff671f;
+  box-shadow: 0 0 0 3px rgba(255,103,31,0.2);
+}
+
+/* UX4G Badges */
+.ux4g-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.ux4g-badge-gov {
+  background: #005691;
+  color: #ffffff;
+}
+.ux4g-badge-saffron {
+  background: #ff671f;
+  color: #ffffff;
+}
+.ux4g-badge-green {
+  background: #046a38;
+  color: #ffffff;
+}
+
