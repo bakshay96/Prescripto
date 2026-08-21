@@ -204,8 +204,8 @@ function AdminContent() {
                 <h1 style={{ fontSize: 24, fontWeight: 900, margin: 0, color: theme.text }}>
                   Master Admin Control Center
                 </h1>
-                <span className="ux4g-badge ux4g-badge-gov">UX4G MASTER ADMIN</span>
-                <span className="ux4g-badge ux4g-badge-saffron">GOVT COMPLIANT</span>
+                <span className="ux4g-badge ux4g-badge-gov">MASTER ADMIN</span>
+                <span className="ux4g-badge ux4g-badge-saffron">VERIFIED PLATFORM</span>
               </div>
               <p style={{ fontSize: 13, color: theme.textMuted, margin: "4px 0 0" }}>
                 Platform-wide Healthcare Control • Hospital Medical Inspector • Subscription Trials • Multi-User Broadcasts
@@ -356,7 +356,7 @@ function AdminContent() {
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <span style={{ fontSize: 28 }}>{card.icon}</span>
                       <span style={{ fontSize: 10, fontWeight: 900, color: card.color, textTransform: "uppercase" }}>
-                        UX4G METRIC
+                        METRIC
                       </span>
                     </div>
                     <div style={{ fontSize: 32, fontWeight: 900, color: theme.text, lineHeight: 1 }}>{card.value}</div>

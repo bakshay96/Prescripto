@@ -459,3 +459,58 @@ export function respondSupportQuery(queryId: string, responseText: string): Prom
     body: JSON.stringify({ response: responseText }),
   });
 }
+
+// ── Payments & Razorpay Subscription ─────────────────────────────────────────
+
+export interface RazorpayOrderResponse {
+  order_id: string;
+  amount: number;
+  currency: string;
+  key_id: string;
+  plan: string;
+  plan_label: string;
+}
+
+export interface PaymentVerifyRequest {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+  plan: string;
+}
+
+export interface PaymentRecord {
+  id: string;
+  clinic_id: string;
+  user_id: string;
+  order_id: string;
+  payment_id: string;
+  plan: string;
+  amount: number;
+  currency: string;
+  status: string;
+  verified_at: string;
+}
+
+export function createRazorpayOrder(plan: string): Promise<RazorpayOrderResponse> {
+  return apiFetch<RazorpayOrderResponse>("/payments/create-order", {
+    method: "POST",
+    body: JSON.stringify({ plan }),
+  });
+}
+
+export function verifyRazorpayPayment(data: PaymentVerifyRequest): Promise<{
+  status: string;
+  message: string;
+  plan: string;
+  valid_until: string;
+  payment_id: string;
+}> {
+  return apiFetch("/payments/verify-payment", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function getPaymentHistory(): Promise<PaymentRecord[]> {
+  return apiFetch<PaymentRecord[]>("/payments/history");
+}
