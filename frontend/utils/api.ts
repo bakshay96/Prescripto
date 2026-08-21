@@ -359,9 +359,27 @@ export interface Hospital {
   email: string;
   registration_number: string;
   doctor_count: number;
+  pharmacist_count?: number;
+  prescription_count?: number;
+  patient_count?: number;
+  medicine_count?: number;
   subscription_plan: string;
   subscription_active: boolean;
   subscription_valid_until: string | null;
+  trial_days_remaining?: number;
+}
+
+export interface BroadcastMessage {
+  id: string;
+  sender_id: string;
+  sender_name: string;
+  target_group: "ALL" | "DOCTORS" | "PHARMACISTS" | "HOSPITALS" | "SPECIFIC";
+  target_clinic_id?: string | null;
+  target_user_id?: string | null;
+  subject: string;
+  message: string;
+  priority: "INFO" | "WARNING" | "CRITICAL_ALERT";
+  created_at: string;
 }
 
 export interface SupportQuery {
@@ -385,6 +403,19 @@ export function listHospitals(search?: string): Promise<Hospital[]> {
   return apiFetch<Hospital[]>(`/admin/hospitals${q}`);
 }
 
+export function grantSubscriptionTrial(clinicId: string, trialDays: number): Promise<{
+  message: string;
+  clinic_id: string;
+  plan: string;
+  valid_until: string;
+  trial_days_remaining: number;
+}> {
+  return apiFetch(`/admin/hospitals/${clinicId}/trial`, {
+    method: "POST",
+    body: JSON.stringify({ trial_days: trialDays }),
+  });
+}
+
 export function blockHospital(clinicId: string): Promise<{ message: string }> {
   return apiFetch<{ message: string }>(`/admin/hospitals/${clinicId}/block`, { method: "POST" });
 }
@@ -398,6 +429,24 @@ export function updateSubscription(clinicId: string, plan: string): Promise<any>
     method: "POST",
     body: JSON.stringify({ plan, is_active: true }),
   });
+}
+
+export function sendBroadcastMessage(data: {
+  target_group: string;
+  target_clinic_id?: string;
+  target_user_id?: string;
+  subject: string;
+  message: string;
+  priority: string;
+}): Promise<{ message: string; id: string; doc: BroadcastMessage }> {
+  return apiFetch("/admin/messages/broadcast", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function listBroadcastMessages(): Promise<BroadcastMessage[]> {
+  return apiFetch<BroadcastMessage[]>("/admin/messages");
 }
 
 export function listSupportQueries(): Promise<SupportQuery[]> {
