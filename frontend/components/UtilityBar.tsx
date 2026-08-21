@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useTheme, THEMES, ThemeId, Lang, FontSizeScale } from "./ThemeContext";
 import { TypingLang } from "../utils/transliteration";
 import Link from "next/link";
@@ -37,10 +37,36 @@ export default function UtilityBar() {
   const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<StoredUser | null>(null);
 
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     setMounted(true);
-    setUser(getUser());
+    const syncUser = () => setUser(getUser());
+    syncUser();
+
+    // Auto-close dropdown when clicking outside
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setUserOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("storage", syncUser);
+    window.addEventListener("auth-change", syncUser);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("storage", syncUser);
+      window.removeEventListener("auth-change", syncUser);
+    };
   }, []);
+
+  useEffect(() => {
+    if (mounted) {
+      setUser(getUser());
+    }
+  }, [pathname, mounted]);
 
   let navLinks: Array<{ href: string; label: string }> = [];
 
@@ -102,8 +128,6 @@ export default function UtilityBar() {
           <span style={{ fontWeight: 800, color: "#ff671f", letterSpacing: "0.5px" }}>
             ⚕️ PRESCRIPTO HEALTHCARE PLATFORM
           </span>
-          <span style={{ opacity: 0.4 }}>|</span>
-          <span style={{ color: "#e0e0e0" }}>UX4G Design System Compliant</span>
         </div>
 
         {/* Right: Accessibility Controls (A-, A, A+ font scale, Transliteration Mode, UI Lang) */}
@@ -210,7 +234,7 @@ export default function UtilityBar() {
               ⚕
             </div>
             <span style={{ fontSize: 14, fontWeight: 900, color: theme.text, letterSpacing: "-0.3px" }}>
-              Prescripto <span style={{ fontSize: 10, color: theme.accent, textTransform: "uppercase" }}>UX4G</span>
+              Prescripto
             </span>
           </Link>
 
@@ -318,7 +342,7 @@ export default function UtilityBar() {
 
           {/* User Profile / Logout Dropdown (SSR safe via mounted check) */}
           {mounted && user ? (
-            <div style={{ position: "relative" }}>
+            <div ref={dropdownRef} style={{ position: "relative" }}>
               <button
                 onClick={() => setUserOpen(!userOpen)}
                 style={{

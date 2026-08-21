@@ -68,6 +68,8 @@ export default function MedicalStoreDashboard({
   const [internalDark, setInternalDark] = useState(true);
   const isDarkMode = isDarkTheme !== undefined ? isDarkTheme : internalDark;
   const toggleDark = onToggleTheme || (() => setInternalDark(!internalDark));
+
+  const [activeTab, setActiveTab] = useState<"inventory" | "alerts" | "dispense" | "analytics">("inventory");
   const [medicines, setMedicines] = useState<MedicineItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -116,16 +118,14 @@ export default function MedicalStoreDashboard({
         }));
         setMedicines(mapped);
       } else {
-        // Empty inventory from backend — show empty state (not mock data)
         setMedicines([]);
       }
     } catch {
-      // If unauthenticated or network error — show demo data
       const token = typeof window !== "undefined" ? localStorage.getItem("prescripto_token") : null;
       if (!token) {
         setMedicines(INITIAL_MEDICINES);
       } else {
-        setMedicines([]); // Authenticated but error — show empty
+        setMedicines([]);
       }
     } finally {
       setLoading(false);
@@ -146,6 +146,10 @@ export default function MedicalStoreDashboard({
       return matchesSearch && matchesCat;
     });
   }, [medicines, searchQuery, selectedCategory]);
+
+  const alertMedicines = useMemo(() => {
+    return medicines.filter((m) => m.totalStock <= m.minStockAlert);
+  }, [medicines]);
 
   // Metrics
   const totalItems = medicines.length;
@@ -215,44 +219,55 @@ export default function MedicalStoreDashboard({
   };
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? "bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900"} font-sans transition-colors duration-200`}>
+    <div className={`min-h-screen ux4g-theme-govblue ${isDarkMode ? "bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900"} font-sans transition-colors duration-200`}>
       {/* Header Bar */}
-      <header className={`sticky top-0 z-30 backdrop-blur-md border-b px-6 py-4 flex items-center justify-between ${isDarkMode ? "bg-slate-900/80 border-slate-800" : "bg-white/80 border-slate-200"}`}>
+      <header className={`sticky top-0 z-30 backdrop-blur-md border-b px-6 py-4 flex items-center justify-between flex-wrap gap-4 ${isDarkMode ? "bg-slate-900/80 border-slate-800" : "bg-white/80 border-slate-200"}`}>
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white text-xl shadow-lg shadow-emerald-500/20">
             💊
           </div>
           <div>
             <h1 className="text-lg font-black tracking-tight flex items-center gap-2">
-              Medical Store &amp; Inventory
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20">
-                ● Live
-              </span>
+              Medical Store &amp; Pharmacy Dashboard
+              <span className="ux4g-badge ux4g-badge-gov">PHARMACIST PORTAL</span>
             </h1>
-            <p className={`text-xs ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Pharmacist Portal • Real-time Inventory Sync</p>
+            <p className={`text-xs ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Real-time Prescription Fulfillment &amp; Stock Sync</p>
           </div>
         </div>
 
         <div className="flex items-center space-x-3">
-          {/* Theme Toggle */}
-          <button
-            onClick={toggleDark}
-            className={`p-2 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all ${
-              isDarkMode ? "bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100"
-            }`}
-          >
-            {isDarkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}
-          </button>
-
-          {/* Add Medicine Button (Pharmacist Allowed) */}
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-500/20 transition-all flex items-center space-x-1.5"
+            className="ux4g-btn ux4g-btn-green"
           >
-            <span>+ Add Medicine</span>
+            <span>+ Add Medicine to Store</span>
           </button>
         </div>
       </header>
+
+      {/* Interactive Tabs Bar */}
+      <div className="px-6 pt-4 flex gap-2 flex-wrap">
+        {[
+          { id: "inventory", label: "🧪 Medicine Inventory", count: medicines.length },
+          { id: "alerts", label: "📦 Low Stock Alerts", count: lowStockCount },
+          { id: "dispense", label: "📋 Prescription Dispense Desk" },
+          { id: "analytics", label: "📊 Valuation Analytics" },
+        ].map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setActiveTab(t.id as any)}
+            className={`ux4g-btn ${activeTab === t.id ? "ux4g-btn-primary" : "ux4g-btn-outline"}`}
+            style={{ fontSize: 12 }}
+          >
+            <span>{t.label}</span>
+            {t.count !== undefined && (
+              <span className="ux4g-badge ux4g-badge-saffron" style={{ marginLeft: 4 }}>
+                {t.count}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
 
       <main className="p-6 max-w-7xl mx-auto space-y-6">
         {/* Metrics Grid */}
