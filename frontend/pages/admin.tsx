@@ -20,9 +20,13 @@ import {
   Hospital,
   BroadcastMessage,
   SupportQuery,
+  AdminPlanConfig,
+  getAdminPlans,
+  saveAdminPlan,
+  setCustomHospitalSubscription,
 } from "../utils/api";
 
-type AdminTab = "overview" | "hospitals" | "trials" | "broadcast" | "queries";
+type AdminTab = "overview" | "hospitals" | "trials" | "plans" | "broadcast" | "queries";
 
 function AdminContent() {
   const router = useRouter();
@@ -37,10 +41,26 @@ function AdminContent() {
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [broadcasts, setBroadcasts] = useState<BroadcastMessage[]>([]);
   const [queries, setQueries] = useState<SupportQuery[]>([]);
+  const [plans, setPlans] = useState<AdminPlanConfig[]>([]);
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
 
   const [search, setSearch] = useState("");
   const [replyText, setReplyText] = useState<Record<string, string>>({});
+
+  // Plan Config Form State
+  const [editingPlan, setEditingPlan] = useState<AdminPlanConfig | null>(null);
+  const [planKeyInput, setPlanKeyInput] = useState("");
+  const [planLabelInput, setPlanLabelInput] = useState("");
+  const [planPriceInput, setPlanPriceInput] = useState<number>(999);
+  const [planDurationInput, setPlanDurationInput] = useState<number>(30);
+  const [planFeaturesInput, setPlanFeaturesInput] = useState("");
+
+  // Custom Hospital Price Modal State
+  const [customSubModalOpen, setCustomSubModalOpen] = useState(false);
+  const [selectedHospForCustomSub, setSelectedHospForCustomSub] = useState<Hospital | null>(null);
+  const [customPriceInput, setCustomPriceInput] = useState<number>(499);
+  const [customPlanNameInput, setCustomPlanNameInput] = useState<string>("PRO");
+  const [customDurationInput, setCustomDurationInput] = useState<number>(30);
 
   // Trial Modal State
   const [trialModalOpen, setTrialModalOpen] = useState(false);
@@ -64,16 +84,18 @@ function AdminContent() {
     setLoading(true);
     setError(null);
     try {
-      const [anData, hosData, bData, qData] = await Promise.all([
+      const [anData, hosData, bData, qData, pData] = await Promise.all([
         getAdminAnalytics().catch(() => null),
         listHospitals().catch(() => []),
         listBroadcastMessages().catch(() => []),
         listSupportQueries().catch(() => []),
+        getAdminPlans().catch(() => []),
       ]);
       setAnalytics(anData);
       setHospitals(hosData);
       setBroadcasts(bData);
       setQueries(qData);
+      setPlans(pData);
     } catch (err: any) {
       setError(err.message || "Failed to load Master Admin control center.");
     } finally {
@@ -280,6 +302,7 @@ function AdminContent() {
             {[
               { id: "overview", label: "📊 System Analytics", badge: analytics ? `${analytics.total_hospitals} Hosp` : null },
               { id: "hospitals", label: "🏥 Hospitals & Medical Stores", badge: `${hospitals.length}` },
+              { id: "plans", label: "💳 Plans & Pricing Control", badge: `${plans.length}` },
               { id: "trials", label: "⭐ Subscription & Trial Manager", badge: `${hospitals.filter((h) => h.subscription_plan === "TRIAL" || (h.trial_days_remaining ?? 0) > 0).length}` },
               { id: "broadcast", label: "📢 Broadcast Messages", badge: `${broadcasts.length}` },
               { id: "queries", label: "💬 Support Desk", badge: queries.filter((q) => q.status === "OPEN").length ? `${queries.filter((q) => q.status === "OPEN").length} Open` : null },
@@ -607,6 +630,226 @@ function AdminContent() {
             </div>
           )}
 
+          {/* ════ TAB 3: PLANS & CUSTOM PRICING CONTROL ════ */}
+          {activeTab === "plans" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <div className="ux4g-card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+                <div>
+                  <div className="ux4g-card-title">💳 Master Admin Subscription Plans &amp; Custom Pricing Control</div>
+                  <p style={{ fontSize: 12, color: theme.textMuted, margin: "4px 0 0" }}>
+                    Configure platform-wide subscription plan prices (₹), durations, features, or override pricing for specific hospitals.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingPlan({
+                      plan_key: "",
+                      label: "",
+                      amount_inr: 499,
+                      duration_days: 30,
+                      features: ["OPD Prescription Writer", "Inventory Sync"],
+                      is_active: true,
+                    });
+                    setPlanKeyInput("");
+                    setPlanLabelInput("");
+                    setPlanPriceInput(499);
+                    setPlanDurationInput(30);
+                    setPlanFeaturesInput("OPD Prescription Writer, Inventory Sync, WhatsApp Sharing");
+                  }}
+                  className="ux4g-btn ux4g-btn-saffron"
+                >
+                  ➕ Create New Subscription Plan
+                </button>
+              </div>
+
+              {/* Configure Plan Form Modal / Card */}
+              {editingPlan && (
+                <div className="ux4g-card" style={{ border: "2px solid #ff671f", background: isDark ? "#0f172a" : "#fff" }}>
+                  <div className="ux4g-card-title" style={{ color: "#ff671f" }}>
+                    {editingPlan.plan_key ? `✏️ Edit Plan Pricing: ${editingPlan.plan_key}` : "➕ Create Custom Subscription Plan"}
+                  </div>
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      try {
+                        const feats = planFeaturesInput.split(",").map((s) => s.trim()).filter(Boolean);
+                        const res = await saveAdminPlan({
+                          plan_key: planKeyInput || editingPlan.plan_key,
+                          label: planLabelInput || editingPlan.label,
+                          amount_inr: planPriceInput,
+                          duration_days: planDurationInput,
+                          features: feats,
+                          is_active: true,
+                        });
+                        setActionMsg(res.message);
+                        setEditingPlan(null);
+                        loadAdminData();
+                      } catch (err: any) {
+                        setError(err.message || "Failed to save subscription plan.");
+                      }
+                    }}
+                    style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginTop: 16 }}
+                  >
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 900, color: theme.textMuted }}>Plan Key *</label>
+                      <input
+                        type="text"
+                        required
+                        disabled={!!editingPlan.plan_key}
+                        value={planKeyInput || editingPlan.plan_key}
+                        onChange={(e) => setPlanKeyInput(e.target.value.toUpperCase())}
+                        placeholder="e.g. PRO, GOLD_ANNUAL"
+                        style={{ width: "100%", padding: 8, borderRadius: 8, border: `1px solid ${isDark ? "#334155" : "#cbd5e1"}`, background: isDark ? "#020617" : "#fff", color: theme.text, fontSize: 13 }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 900, color: theme.textMuted }}>Display Label *</label>
+                      <input
+                        type="text"
+                        required
+                        value={planLabelInput || editingPlan.label}
+                        onChange={(e) => setPlanLabelInput(e.target.value)}
+                        placeholder="e.g. PRO Plan (Monthly)"
+                        style={{ width: "100%", padding: 8, borderRadius: 8, border: `1px solid ${isDark ? "#334155" : "#cbd5e1"}`, background: isDark ? "#020617" : "#fff", color: theme.text, fontSize: 13 }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 900, color: theme.textMuted }}>Customizable Price (₹ INR) *</label>
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        required
+                        value={planPriceInput}
+                        onChange={(e) => setPlanPriceInput(Number(e.target.value))}
+                        style={{ width: "100%", padding: 8, borderRadius: 8, border: `1px solid ${isDark ? "#334155" : "#cbd5e1"}`, background: isDark ? "#020617" : "#fff", color: theme.text, fontSize: 13, fontWeight: 900 }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 900, color: theme.textMuted }}>Validity Duration (Days) *</label>
+                      <input
+                        type="number"
+                        min={1}
+                        required
+                        value={planDurationInput}
+                        onChange={(e) => setPlanDurationInput(Number(e.target.value))}
+                        style={{ width: "100%", padding: 8, borderRadius: 8, border: `1px solid ${isDark ? "#334155" : "#cbd5e1"}`, background: isDark ? "#020617" : "#fff", color: theme.text, fontSize: 13 }}
+                      />
+                    </div>
+                    <div style={{ gridColumn: "1 / -1" }}>
+                      <label style={{ fontSize: 11, fontWeight: 900, color: theme.textMuted }}>Features List (Comma Separated)</label>
+                      <input
+                        type="text"
+                        value={planFeaturesInput}
+                        onChange={(e) => setPlanFeaturesInput(e.target.value)}
+                        placeholder="Unlimited Prescriptions, Inventory Sync, WhatsApp Sharing"
+                        style={{ width: "100%", padding: 8, borderRadius: 8, border: `1px solid ${isDark ? "#334155" : "#cbd5e1"}`, background: isDark ? "#020617" : "#fff", color: theme.text, fontSize: 13 }}
+                      />
+                    </div>
+                    <div style={{ gridColumn: "1 / -1", display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                      <button type="button" onClick={() => setEditingPlan(null)} className="ux4g-btn ux4g-btn-outline">Cancel</button>
+                      <button type="submit" className="ux4g-btn ux4g-btn-green">💾 Save Plan Config</button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* Plans Table */}
+              <div className="ux4g-card" style={{ padding: 0, overflow: "hidden" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, textAlign: "left" }}>
+                  <thead>
+                    <tr style={{ background: isDark ? "#020617" : "#f1f5f9", borderBottom: `1px solid ${isDark ? "#1e293b" : "#e2e8f0"}` }}>
+                      <th style={{ padding: "12px 16px", fontWeight: 900 }}>Plan Key</th>
+                      <th style={{ padding: "12px 16px", fontWeight: 900 }}>Label</th>
+                      <th style={{ padding: "12px 16px", fontWeight: 900 }}>Customized Price (₹)</th>
+                      <th style={{ padding: "12px 16px", fontWeight: 900 }}>Duration</th>
+                      <th style={{ padding: "12px 16px", fontWeight: 900 }}>Status</th>
+                      <th style={{ padding: "12px 16px", fontWeight: 900 }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {plans.map((p) => (
+                      <tr key={p.plan_key} style={{ borderBottom: `1px solid ${isDark ? "#1e293b" : "#f1f5f9"}` }}>
+                        <td style={{ padding: "12px 16px", fontWeight: 900, color: "#ff671f" }}>{p.plan_key}</td>
+                        <td style={{ padding: "12px 16px", fontWeight: 800 }}>{p.label}</td>
+                        <td style={{ padding: "12px 16px", fontWeight: 900, color: "#046a38", fontSize: 15 }}>
+                          ₹{p.amount_inr.toFixed(2)}
+                        </td>
+                        <td style={{ padding: "12px 16px" }}>{p.duration_days} Days</td>
+                        <td style={{ padding: "12px 16px" }}>
+                          <span className={p.is_active ? "ux4g-badge ux4g-badge-green" : "ux4g-badge ux4g-badge-red"}>
+                            {p.is_active ? "ACTIVE" : "INACTIVE"}
+                          </span>
+                        </td>
+                        <td style={{ padding: "12px 16px" }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingPlan(p);
+                              setPlanKeyInput(p.plan_key);
+                              setPlanLabelInput(p.label);
+                              setPlanPriceInput(p.amount_inr);
+                              setPlanDurationInput(p.duration_days);
+                              setPlanFeaturesInput((p.features || []).join(", "));
+                            }}
+                            className="ux4g-btn ux4g-btn-outline"
+                            style={{ padding: "4px 10px", fontSize: 11 }}
+                          >
+                            ✏️ Edit Price
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Set Custom Price Per Hospital Section */}
+              <div className="ux4g-card space-y-3">
+                <div className="ux4g-card-title">🎯 Custom Pricing Override per Hospital</div>
+                <p style={{ fontSize: 12, color: theme.textMuted }}>
+                  Assign custom prices or tailored subscription plans to specific hospitals.
+                </p>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12 }}>
+                  {hospitals.map((h) => (
+                    <div
+                      key={h.id}
+                      style={{
+                        padding: 14,
+                        borderRadius: 12,
+                        border: `1px solid ${isDark ? "#1e293b" : "#e2e8f0"}`,
+                        background: isDark ? "#020617" : "#f8fafc",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: 13, color: theme.text }}>{h.name}</div>
+                        <div style={{ fontSize: 11, color: theme.textMuted }}>Plan: {h.subscription_plan}</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedHospForCustomSub(h);
+                          setCustomPriceInput(499);
+                          setCustomPlanNameInput("PRO");
+                          setCustomDurationInput(30);
+                          setCustomSubModalOpen(true);
+                        }}
+                        className="ux4g-btn ux4g-btn-saffron"
+                        style={{ padding: "4px 10px", fontSize: 11 }}
+                      >
+                        🏷️ Set Custom Price
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ════ TAB 4: BROADCAST MESSAGING ════ */}
           {activeTab === "broadcast" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -826,6 +1069,104 @@ function AdminContent() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════ MODAL 1.5: OVERRIDE CUSTOM SUBSCRIPTION PRICE PER HOSPITAL ════ */}
+      {customSubModalOpen && selectedHospForCustomSub && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 99999,
+            background: "rgba(0,0,0,0.6)",
+            backdropFilter: "blur(6px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+        >
+          <div className="ux4g-card" style={{ width: 460, maxWidth: "100%", background: isDark ? "#0f172a" : "#ffffff" }}>
+            <div className="ux4g-card-header">
+              <div className="ux4g-card-title">🏷️ Override Custom Subscription Price</div>
+              <button
+                type="button"
+                onClick={() => setCustomSubModalOpen(false)}
+                style={{ background: "none", border: "none", color: theme.textMuted, fontSize: 16, cursor: "pointer" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                try {
+                  const res = await setCustomHospitalSubscription(selectedHospForCustomSub.id, {
+                    plan: customPlanNameInput,
+                    custom_price_inr: customPriceInput,
+                    duration_days: customDurationInput,
+                    notes: "Master Admin Custom Discounted Plan",
+                  });
+                  setActionMsg(res.message);
+                  setCustomSubModalOpen(false);
+                  loadAdminData();
+                } catch (err: any) {
+                  setError(err.message || "Failed to set custom hospital subscription price.");
+                }
+              }}
+              style={{ display: "flex", flexDirection: "column", gap: 14 }}
+            >
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 800, color: theme.textMuted }}>Target Hospital:</label>
+                <div style={{ fontSize: 14, fontWeight: 900, color: "#ff671f", marginTop: 2 }}>{selectedHospForCustomSub.name}</div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 800, color: theme.textMuted }}>Assigned Plan Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={customPlanNameInput}
+                  onChange={(e) => setCustomPlanNameInput(e.target.value.toUpperCase())}
+                  placeholder="e.g. PRO, ENTERPRISE, RURAL_SPECIAL"
+                  style={{ width: "100%", padding: 8, borderRadius: 8, border: `1px solid ${isDark ? "#334155" : "#cbd5e1"}`, background: isDark ? "#020617" : "#fff", color: theme.text, fontSize: 13 }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 800, color: theme.textMuted }}>Custom Total Price (₹ INR) *</label>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  required
+                  value={customPriceInput}
+                  onChange={(e) => setCustomPriceInput(Number(e.target.value))}
+                  placeholder="e.g. 499"
+                  style={{ width: "100%", padding: 8, borderRadius: 8, border: `1px solid ${isDark ? "#334155" : "#cbd5e1"}`, background: isDark ? "#020617" : "#fff", color: theme.text, fontSize: 14, fontWeight: 900 }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 800, color: theme.textMuted }}>Validity Duration (Days) *</label>
+                <input
+                  type="number"
+                  min={1}
+                  required
+                  value={customDurationInput}
+                  onChange={(e) => setCustomDurationInput(Number(e.target.value))}
+                  style={{ width: "100%", padding: 8, borderRadius: 8, border: `1px solid ${isDark ? "#334155" : "#cbd5e1"}`, background: isDark ? "#020617" : "#fff", color: theme.text, fontSize: 13 }}
+                />
+              </div>
+
+              <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+                <button type="button" onClick={() => setCustomSubModalOpen(false)} className="ux4g-btn ux4g-btn-outline" style={{ flex: 1 }}>Cancel</button>
+                <button type="submit" className="ux4g-btn ux4g-btn-saffron" style={{ flex: 1 }}>🏷️ Assign Custom Price</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

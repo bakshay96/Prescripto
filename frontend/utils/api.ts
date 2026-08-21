@@ -158,6 +158,9 @@ export interface Patient {
   date_of_birth: string;
   gender: "MALE" | "FEMALE" | "OTHER";
   phone: string | null;
+  status?: "ACTIVE" | "BANNED" | "SUSPENDED";
+  is_banned?: boolean;
+  ban_reason?: string | null;
   age: { years: number; months: number; days: number; formatted: string };
 }
 
@@ -170,12 +173,46 @@ export async function quickCreatePatient(data: {
   name: string;
   village_location?: string;
   date_of_birth?: string;
+  age_years?: number;
+  age_months?: number;
   gender?: string;
   phone?: string;
 }): Promise<Patient> {
   return apiFetch<Patient>("/patients", {
     method: "POST",
     body: JSON.stringify(data),
+  });
+}
+
+export function updatePatient(patientId: string, data: Partial<Patient>): Promise<Patient> {
+  return apiFetch<Patient>(`/patients/${patientId}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export function banPatient(patientId: string, reason?: string): Promise<{ message: string; patient: Patient }> {
+  const q = reason ? `?reason=${encodeURIComponent(reason)}` : "";
+  return apiFetch<{ message: string; patient: Patient }>(`/patients/${patientId}/ban${q}`, {
+    method: "POST",
+  });
+}
+
+export function unbanPatient(patientId: string): Promise<{ message: string; patient: Patient }> {
+  return apiFetch<{ message: string; patient: Patient }>(`/patients/${patientId}/unban`, {
+    method: "POST",
+  });
+}
+
+export function deletePatient(patientId: string): Promise<{ message: string; deleted_patient_id: string }> {
+  return apiFetch<{ message: string; deleted_patient_id: string }>(`/patients/${patientId}`, {
+    method: "DELETE",
+  });
+}
+
+export function deletePatientHistory(patientId: string): Promise<{ message: string; deleted_count: number }> {
+  return apiFetch<{ message: string; deleted_count: number }>(`/patients/${patientId}/history`, {
+    method: "DELETE",
   });
 }
 
@@ -197,6 +234,7 @@ export interface MedicineAutocomplete {
   unit: string;
   stock_quantity: number;
   is_low_stock: boolean;
+  price?: number;
 }
 
 export interface Medicine extends MedicineAutocomplete {
@@ -262,6 +300,7 @@ export interface RxCreateV2 {
     name: string;
     village_location?: string;
     date_of_birth?: string;
+    age_years?: number;
     gender?: string;
     phone?: string;
   } | null;
@@ -300,6 +339,12 @@ export function createPrescription(data: RxCreateV2): Promise<Prescription> {
 export function listPrescriptions(patientId?: string): Promise<Prescription[]> {
   const q = patientId ? `?patient_id=${patientId}` : "";
   return apiFetch<Prescription[]>(`/prescriptions${q}`);
+}
+
+export function dispensePrescription(prescriptionId: string): Promise<{ message: string; status: string }> {
+  return apiFetch<{ message: string; status: string }>(`/prescriptions/${prescriptionId}/dispense`, {
+    method: "POST",
+  });
 }
 
 /** Returns the full URL to open in a new tab for printing */
@@ -431,6 +476,36 @@ export function updateSubscription(clinicId: string, plan: string): Promise<any>
   });
 }
 
+export interface AdminPlanConfig {
+  plan_key: string;
+  label: string;
+  amount_inr: number;
+  duration_days: number;
+  features: string[];
+  is_active: boolean;
+}
+
+export function getAdminPlans(): Promise<AdminPlanConfig[]> {
+  return apiFetch<AdminPlanConfig[]>("/admin/plans");
+}
+
+export function saveAdminPlan(data: AdminPlanConfig): Promise<{ message: string; plan: any }> {
+  return apiFetch<{ message: string; plan: any }>("/admin/plans", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function setCustomHospitalSubscription(
+  clinicId: string,
+  data: { plan: string; custom_price_inr: number; duration_days: number; notes?: string }
+): Promise<{ message: string; subscription: any }> {
+  return apiFetch<{ message: string; subscription: any }>(`/admin/hospitals/${clinicId}/custom-subscription`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
 export function sendBroadcastMessage(data: {
   target_group: string;
   target_clinic_id?: string;
@@ -469,6 +544,8 @@ export interface RazorpayOrderResponse {
   key_id: string;
   plan: string;
   plan_label: string;
+  is_free_trial?: boolean;
+  message?: string;
 }
 
 export interface PaymentVerifyRequest {
@@ -491,10 +568,10 @@ export interface PaymentRecord {
   verified_at: string;
 }
 
-export function createRazorpayOrder(plan: string): Promise<RazorpayOrderResponse> {
+export function createRazorpayOrder(plan: string, coupon_code?: string): Promise<RazorpayOrderResponse> {
   return apiFetch<RazorpayOrderResponse>("/payments/create-order", {
     method: "POST",
-    body: JSON.stringify({ plan }),
+    body: JSON.stringify({ plan, coupon_code }),
   });
 }
 
@@ -513,4 +590,134 @@ export function verifyRazorpayPayment(data: PaymentVerifyRequest): Promise<{
 
 export function getPaymentHistory(): Promise<PaymentRecord[]> {
   return apiFetch<PaymentRecord[]>("/payments/history");
+}
+
+export interface HospitalSubscriptionStatus {
+  clinic_id: string;
+  plan: string;
+  is_active: boolean;
+  valid_until: string | null;
+  days_remaining: number | null;
+}
+
+export interface SubscriptionPlanDetail {
+  id: string;
+  name: string;
+  price_inr: number;
+  amount_paise: number;
+  currency: string;
+  duration_days: number;
+  features: string[];
+}
+
+export function getSubscriptionStatus(): Promise<HospitalSubscriptionStatus> {
+  return apiFetch<HospitalSubscriptionStatus>("/payments/subscription-status");
+}
+
+export function getSubscriptionPlans(): Promise<SubscriptionPlanDetail[]> {
+  return apiFetch<SubscriptionPlanDetail[]>("/payments/plans");
+}
+
+export interface CouponResponse {
+  valid: boolean;
+  coupon_code: string;
+  description: string;
+  original_price_inr: number;
+  discount_inr: number;
+  final_price_inr: number;
+  final_amount_paise: number;
+}
+
+export function applyCouponCode(coupon_code: string, plan: string): Promise<CouponResponse> {
+  return apiFetch<CouponResponse>("/payments/apply-coupon", {
+    method: "POST",
+    body: JSON.stringify({ coupon_code, plan }),
+  });
+}
+
+export interface PlatformAnnouncement {
+  active: boolean;
+  title: string;
+  message: string;
+  coupon_code: string;
+  discount_badge: string;
+  trial_offer: string;
+}
+
+export function getPlatformAnnouncements(): Promise<PlatformAnnouncement> {
+  return apiFetch<PlatformAnnouncement>("/payments/announcements");
+}
+
+export interface PatientHistoryRecord {
+  patient: Patient;
+  total_visits: number;
+  history: Array<{
+    id: string;
+    prescription_number: string;
+    doctor_name: string;
+    diagnosis: string;
+    chief_complaints: string;
+    vitals: any;
+    medicines: any[];
+    advice: string;
+    date: string;
+  }>;
+}
+
+export function getPatientHistory(patientId: string): Promise<PatientHistoryRecord> {
+  return apiFetch<PatientHistoryRecord>(`/patients/${patientId}/history`);
+}
+
+export function searchPrescriptionByNumber(query: string): Promise<Prescription[]> {
+  return apiFetch<Prescription[]>(`/prescriptions/search/${encodeURIComponent(query)}`);
+}
+
+export interface PharmacyBillInput {
+  prescription_id?: string;
+  patient_name: string;
+  items: Array<{
+    medicine_id: string;
+    medicine_name: string;
+    quantity: number;
+    unit_price: number;
+    unit_type?: "TAB" | "STRIP" | string;
+    tablets_per_strip?: number;
+  }>;
+  payment_mode?: string;
+  discount_amount?: number;
+  tax_gst_percent?: number;
+}
+
+export interface PharmacyBillResponse {
+  bill_id: string;
+  bill_number: string;
+  patient_name: string;
+  hospital_name?: string;
+  hospital_address?: string;
+  hospital_phone?: string;
+  hospital_gstin?: string;
+  items: any[];
+  subtotal_amount?: number;
+  discount_amount?: number;
+  cgst_amount?: number;
+  sgst_amount?: number;
+  total_amount: number;
+  payment_mode?: string;
+  status: string;
+  created_at: string;
+  message: string;
+}
+
+export function generatePharmacyBill(data: PharmacyBillInput): Promise<PharmacyBillResponse> {
+  return apiFetch<PharmacyBillResponse>("/inventory/billing/generate-bill", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function fetchBillingHistory(search?: string, paymentMode?: string): Promise<PharmacyBillResponse[]> {
+  const params = new URLSearchParams();
+  if (search) params.append("search", search);
+  if (paymentMode && paymentMode !== "ALL") params.append("payment_mode", paymentMode);
+  return apiFetch<PharmacyBillResponse[]>(`/inventory/billing/history?${params.toString()}`);
 }

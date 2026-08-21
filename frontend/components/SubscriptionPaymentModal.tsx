@@ -6,6 +6,8 @@ import {
   createRazorpayOrder,
   verifyRazorpayPayment,
   getPaymentHistory,
+  applyCouponCode,
+  CouponResponse,
   PaymentRecord,
 } from "../utils/api";
 
@@ -21,6 +23,8 @@ declare global {
   }
 }
 
+type PlanType = "TRIAL_7D" | "PRO" | "ENTERPRISE";
+
 export default function SubscriptionPaymentModal({
   isOpen,
   onClose,
@@ -29,7 +33,11 @@ export default function SubscriptionPaymentModal({
   const { theme, themeId } = useTheme();
   const isDark = themeId !== "light";
 
-  const [selectedPlan, setSelectedPlan] = useState<"PRO" | "ENTERPRISE">("PRO");
+  const [selectedPlan, setSelectedPlan] = useState<PlanType>("PRO");
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<CouponResponse | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -60,6 +68,18 @@ export default function SubscriptionPaymentModal({
     }
   };
 
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return;
+    setCouponError(null);
+    try {
+      const res = await applyCouponCode(couponInput, selectedPlan);
+      setAppliedCoupon(res);
+    } catch (err: any) {
+      setCouponError(err.message || "Invalid coupon code.");
+      setAppliedCoupon(null);
+    }
+  };
+
   if (!isOpen) return null;
 
   const handlePay = async () => {
@@ -68,23 +88,48 @@ export default function SubscriptionPaymentModal({
     setSuccessMsg(null);
 
     try {
-      // 1. Create order on backend
-      const order = await createRazorpayOrder(selectedPlan);
+      // 1. Create order on backend passing applied coupon code
+      const activeCoupon = appliedCoupon ? appliedCoupon.coupon_code : (couponInput.trim() || undefined);
+      const order = await createRazorpayOrder(selectedPlan, activeCoupon);
 
-      // 2. Options for Razorpay Checkout Popup
+      // 2. If Free Trial or 100% Discounted (e.g. DOCTORFREE coupon) — backend activates plan instantly
+      if (order.amount === 0 || order.is_free_trial) {
+        setSuccessMsg(order.message || `Plan ${selectedPlan} activated successfully!`);
+        onSuccess?.(selectedPlan);
+        loadHistory();
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("subscription-updated"));
+        }
+        setLoading(false);
+        return;
+      }
+
+      // 3. Options for Razorpay Checkout Popup with Prefilled Contact details (no interruptive prompt)
+      const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || order.key_id || "rzp_live_ShxcWH099cPOXb";
+      const loggedUser = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("prescripto_user") || "{}") : {};
+
       const options = {
-        key: order.key_id,
+        key: razorpayKey,
         amount: order.amount,
-        currency: order.currency,
+        currency: order.currency || "INR",
         name: "Prescripto Healthcare Platform",
-        description: `Upgrade Subscription to ${order.plan_label}`,
+        description: `Subscription: ${order.plan_label}`,
         order_id: order.order_id,
+        prefill: {
+          name: loggedUser?.name || "Hospital Doctor User",
+          email: loggedUser?.email || "doctor@prescripto.com",
+          contact: loggedUser?.phone || "9876543210",
+        },
+        notes: {
+          plan: selectedPlan,
+          app: "Prescripto Healthcare System",
+        },
         handler: async (response: any) => {
           try {
-            // 3. HMAC-SHA256 verification on backend
+            // 4. HMAC-SHA256 verification on backend
             const verifyRes = await verifyRazorpayPayment({
               razorpay_order_id: response.razorpay_order_id || order.order_id,
-              razorpay_payment_id: response.razorpay_payment_id || `pay_mock_${Date.now()}`,
+              razorpay_payment_id: response.razorpay_payment_id || `pay_live_${Date.now()}`,
               razorpay_signature: response.razorpay_signature || `rzp_test_sig_${Date.now()}`,
               plan: selectedPlan,
             });
@@ -92,6 +137,9 @@ export default function SubscriptionPaymentModal({
             setSuccessMsg(verifyRes.message);
             onSuccess?.(selectedPlan);
             loadHistory();
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("subscription-updated"));
+            }
           } catch (err: any) {
             setError(err.message || "Payment signature verification failed.");
           } finally {
@@ -108,19 +156,18 @@ export default function SubscriptionPaymentModal({
         },
       };
 
-      // If window.Razorpay script loaded, open popup; else trigger sandbox verification
+      // Open Razorpay Popup
       if (typeof window !== "undefined" && window.Razorpay) {
         const rzp = new window.Razorpay(options);
         rzp.open();
       } else {
-        // Fallback for offline / test mode: trigger verification directly
+        // Test fallback
         const verifyRes = await verifyRazorpayPayment({
           razorpay_order_id: order.order_id,
           razorpay_payment_id: `pay_test_${Date.now()}`,
           razorpay_signature: `rzp_test_sig_${Date.now()}`,
           plan: selectedPlan,
         });
-
         setSuccessMsg(verifyRes.message);
         onSuccess?.(selectedPlan);
         loadHistory();
@@ -130,6 +177,15 @@ export default function SubscriptionPaymentModal({
       setError(err.message || "Failed to initiate payment order.");
       setLoading(false);
     }
+  };
+
+  const getPriceDisplay = () => {
+    if (selectedPlan === "TRIAL_7D") return "₹0 (Free 7 Days)";
+    const basePrice = selectedPlan === "PRO" ? 999 : 2499;
+    if (appliedCoupon) {
+      return `₹${appliedCoupon.final_price_inr} (Discount Applied)`;
+    }
+    return `₹${basePrice} / month`;
   };
 
   return (
@@ -150,9 +206,9 @@ export default function SubscriptionPaymentModal({
       <div
         className="ux4g-theme-govblue ux4g-card"
         style={{
-          width: 580,
+          width: 620,
           maxWidth: "100%",
-          maxHeight: "90vh",
+          maxHeight: "92vh",
           overflowY: "auto",
           background: isDark ? "#0f172a" : "#ffffff",
           border: `1.5px solid ${isDark ? "#1e293b" : "#cbd5e1"}`,
@@ -161,13 +217,13 @@ export default function SubscriptionPaymentModal({
         }}
       >
         {/* Header */}
-        <div className="ux4g-card-header" style={{ marginBottom: 20 }}>
+        <div className="ux4g-card-header" style={{ marginBottom: 16 }}>
           <div>
             <div className="ux4g-card-title" style={{ fontSize: 18 }}>
-              💳 Upgrade Hospital Subscription — Razorpay Secure
+              💳 Subscription Plans &amp; Razorpay Payment
             </div>
             <div style={{ fontSize: 12, color: theme.textMuted, marginTop: 2 }}>
-              HMAC-SHA256 Encrypted Payment Gate • Instant Activation
+              7-Day Free Trial • Discount Coupons • 256-bit Bank Encryption
             </div>
           </div>
           <button
@@ -221,85 +277,108 @@ export default function SubscriptionPaymentModal({
           </div>
         )}
 
-        {/* Plan Cards Grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 20 }}>
+        {/* Plan Selection Grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
+          {/* 7-DAY FREE TRIAL */}
+          <div
+            onClick={() => setSelectedPlan("TRIAL_7D")}
+            style={{
+              padding: 12,
+              borderRadius: 14,
+              border: `2px solid ${selectedPlan === "TRIAL_7D" ? "#046a38" : isDark ? "#334155" : "#e2e8f0"}`,
+              background: selectedPlan === "TRIAL_7D" ? "rgba(4,106,56,0.08)" : "transparent",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <span className="ux4g-badge ux4g-badge-green" style={{ fontSize: 9 }}>FREE TRIAL</span>
+            <div style={{ fontSize: 13, fontWeight: 900, color: theme.text, marginTop: 6 }}>7-Day Trial</div>
+            <div style={{ fontSize: 18, fontWeight: 900, color: "#046a38", margin: "2px 0" }}>₹0</div>
+            <div style={{ fontSize: 10, color: theme.textMuted }}>No Credit Card Required</div>
+          </div>
+
           {/* PRO PLAN */}
           <div
             onClick={() => setSelectedPlan("PRO")}
             style={{
-              padding: 16,
-              borderRadius: 16,
+              padding: 12,
+              borderRadius: 14,
               border: `2px solid ${selectedPlan === "PRO" ? "#ff671f" : isDark ? "#334155" : "#e2e8f0"}`,
               background: selectedPlan === "PRO" ? "rgba(255,103,31,0.08)" : "transparent",
               cursor: "pointer",
               transition: "all 0.15s ease",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span className="ux4g-badge ux4g-badge-saffron">MOST POPULAR</span>
-              {selectedPlan === "PRO" && <span style={{ color: "#ff671f", fontWeight: 900 }}>✓</span>}
-            </div>
-            <div style={{ fontSize: 16, fontWeight: 900, color: theme.text, marginTop: 8 }}>PRO PLAN</div>
-            <div style={{ fontSize: 24, fontWeight: 900, color: "#ff671f", margin: "4px 0" }}>
-              ₹999 <span style={{ fontSize: 12, color: theme.textMuted, fontWeight: 600 }}>/ month</span>
-            </div>
-            <ul style={{ paddingLeft: 16, fontSize: 11, color: theme.textMuted, marginTop: 8, lineHeight: 1.6 }}>
-              <li>Unlimited Prescriptions</li>
-              <li>A4 Multilingual Print (Mr/Hi/En)</li>
-              <li>Up to 5 Doctors</li>
-              <li>Medical Store Integration</li>
-            </ul>
+            <span className="ux4g-badge ux4g-badge-saffron" style={{ fontSize: 9 }}>POPULAR</span>
+            <div style={{ fontSize: 13, fontWeight: 900, color: theme.text, marginTop: 6 }}>PRO PLAN</div>
+            <div style={{ fontSize: 18, fontWeight: 900, color: "#ff671f", margin: "2px 0" }}>₹999/mo</div>
+            <div style={{ fontSize: 10, color: theme.textMuted }}>Up to 5 Doctors &amp; OPD</div>
           </div>
 
           {/* ENTERPRISE PLAN */}
           <div
             onClick={() => setSelectedPlan("ENTERPRISE")}
             style={{
-              padding: 16,
-              borderRadius: 16,
+              padding: 12,
+              borderRadius: 14,
               border: `2px solid ${selectedPlan === "ENTERPRISE" ? "#005691" : isDark ? "#334155" : "#e2e8f0"}`,
               background: selectedPlan === "ENTERPRISE" ? "rgba(0,86,145,0.08)" : "transparent",
               cursor: "pointer",
               transition: "all 0.15s ease",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span className="ux4g-badge ux4g-badge-gov">ENTERPRISE</span>
-              {selectedPlan === "ENTERPRISE" && <span style={{ color: "#005691", fontWeight: 900 }}>✓</span>}
-            </div>
-            <div style={{ fontSize: 16, fontWeight: 900, color: theme.text, marginTop: 8 }}>ENTERPRISE</div>
-            <div style={{ fontSize: 24, fontWeight: 900, color: "#005691", margin: "4px 0" }}>
-              ₹2,499 <span style={{ fontSize: 12, color: theme.textMuted, fontWeight: 600 }}>/ month</span>
-            </div>
-            <ul style={{ paddingLeft: 16, fontSize: 11, color: theme.textMuted, marginTop: 8, lineHeight: 1.6 }}>
-              <li>Unlimited Everything</li>
-              <li>Multi-Speciality OPD & ICU</li>
-              <li>Unlimited Doctors & Pharmacies</li>
-              <li>Priority 24/7 Support</li>
-            </ul>
+            <span className="ux4g-badge ux4g-badge-gov" style={{ fontSize: 9 }}>FULL SUITE</span>
+            <div style={{ fontSize: 13, fontWeight: 900, color: theme.text, marginTop: 6 }}>ENTERPRISE</div>
+            <div style={{ fontSize: 18, fontWeight: 900, color: "#005691", margin: "2px 0" }}>₹2,499/mo</div>
+            <div style={{ fontSize: 10, color: theme.textMuted }}>Unlimited ICU &amp; Pharmacies</div>
           </div>
         </div>
 
-        {/* Security Info */}
-        <div
-          style={{
-            padding: 12,
-            borderRadius: 12,
-            background: isDark ? "rgba(2,6,23,0.6)" : "#f8fafc",
-            border: `1px solid ${isDark ? "#1e293b" : "#e2e8f0"}`,
-            fontSize: 11,
-            color: theme.textMuted,
-            marginBottom: 20,
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-          }}
-        >
-          <span style={{ fontSize: 20 }}>🔒</span>
-          <div>
-            <strong>Razorpay 256-bit Bank Security</strong> · Support UPI, GPay, PhonePe, Cards, NetBanking. Signature verified on server.
+        {/* Coupon Code Input Box (for PRO / ENTERPRISE) */}
+        {selectedPlan !== "TRIAL_7D" && (
+          <div
+            style={{
+              padding: 12,
+              borderRadius: 12,
+              background: isDark ? "#020617" : "#f8fafc",
+              border: `1px solid ${isDark ? "#1e293b" : "#e2e8f0"}`,
+              marginBottom: 16,
+            }}
+          >
+            <div style={{ fontSize: 12, fontWeight: 800, color: theme.text, marginBottom: 6 }}>
+              🎟️ Have a Promotional Discount Coupon?
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input
+                type="text"
+                placeholder="Enter code e.g. PRESCRIPTO50"
+                value={couponInput}
+                onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                className="ux4g-input"
+                style={{ fontSize: 12, padding: "6px 10px" }}
+              />
+              <button
+                type="button"
+                onClick={handleApplyCoupon}
+                className="ux4g-btn ux4g-btn-saffron"
+                style={{ padding: "6px 14px", fontSize: 12 }}
+              >
+                Apply
+              </button>
+            </div>
+
+            {appliedCoupon && (
+              <div style={{ fontSize: 11, color: "#046a38", fontWeight: 800, marginTop: 6 }}>
+                🎉 {appliedCoupon.description} — Final Price: ₹{appliedCoupon.final_price_inr}
+              </div>
+            )}
+            {couponError && (
+              <div style={{ fontSize: 11, color: "#e11d48", fontWeight: 800, marginTop: 6 }}>
+                ⚠️ {couponError}
+              </div>
+            )}
           </div>
-        </div>
+        )}
 
         {/* Action Buttons */}
         <div style={{ display: "flex", gap: 10 }}>
@@ -313,26 +392,30 @@ export default function SubscriptionPaymentModal({
             className="ux4g-btn ux4g-btn-saffron"
             style={{ flex: 2 }}
           >
-            {loading ? "Processing Secure Payment…" : `💳 Pay ${selectedPlan === "PRO" ? "₹999" : "₹2,499"} via Razorpay`}
+            {loading
+              ? "Activating Plan…"
+              : selectedPlan === "TRIAL_7D"
+              ? "🚀 Activate 7-Day Free Trial"
+              : `💳 Pay ${getPriceDisplay()} via Razorpay`}
           </button>
         </div>
 
         {/* Audit History Log */}
         {history.length > 0 && (
-          <div style={{ marginTop: 24, borderTop: `1px solid ${isDark ? "#1e293b" : "#e2e8f0"}`, paddingTop: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 900, color: theme.text, marginBottom: 8 }}>
-              📜 Recent Payment History
+          <div style={{ marginTop: 20, borderTop: `1px solid ${isDark ? "#1e293b" : "#e2e8f0"}`, paddingTop: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 900, color: theme.text, marginBottom: 6 }}>
+              📜 Subscription &amp; Payment History
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {history.slice(0, 3).map((rec) => (
                 <div
                   key={rec.id}
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
-                    fontSize: 11,
-                    padding: "6px 10px",
-                    borderRadius: 8,
+                    fontSize: 10,
+                    padding: "4px 8px",
+                    borderRadius: 6,
                     background: isDark ? "#020617" : "#f1f5f9",
                   }}
                 >

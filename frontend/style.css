@@ -1749,6 +1749,47 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   box-shadow: 0 0 0 3px rgba(255,103,31,0.2);
 }
 
+/* ── UX4G Official Design System Theme Variants ── */
+.ux4g-theme-govblue {
+  --ux4g-bg: #0b192c;
+  --ux4g-surface: #1e3e62;
+  --ux4g-card: #1e3e62;
+  --ux4g-border: #005691;
+  --ux4g-text: #ffffff;
+  --ux4g-text-muted: #90caf9;
+  --ux4g-accent: #ff671f;
+}
+
+.ux4g-theme-dark {
+  --ux4g-bg: #020617;
+  --ux4g-surface: #0f172a;
+  --ux4g-card: #0f172a;
+  --ux4g-border: #1e293b;
+  --ux4g-text: #f8fafc;
+  --ux4g-text-muted: #64748b;
+  --ux4g-accent: #38bdf8;
+}
+
+.ux4g-theme-light {
+  --ux4g-bg: #f8fafc;
+  --ux4g-surface: #ffffff;
+  --ux4g-card: #ffffff;
+  --ux4g-border: #e2e8f0;
+  --ux4g-text: #0f172a;
+  --ux4g-text-muted: #475569;
+  --ux4g-accent: #005691;
+}
+
+.ux4g-theme-emerald {
+  --ux4g-bg: #052e16;
+  --ux4g-surface: #14532d;
+  --ux4g-card: #166534;
+  --ux4g-border: #166534;
+  --ux4g-text: #ecfdf5;
+  --ux4g-text-muted: #6ee7b7;
+  --ux4g-accent: #10b981;
+}
+
 /* UX4G Badges */
 .ux4g-badge {
   display: inline-flex;
@@ -1772,5 +1813,90 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .ux4g-badge-green {
   background: #046a38;
   color: #ffffff;
+}
+.ux4g-badge-blue {
+  background: #0284c7;
+  color: #ffffff;
+}
+.ux4g-badge-red {
+  background: #dc2626;
+  color: #ffffff;
+}
+.ux4g-badge-amber {
+  background: #d97706;
+  color: #ffffff;
+}
+
+/* UX4G Standard Table Component */
+.ux4g-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+}
+.ux4g-table th {
+  background: rgba(0, 86, 145, 0.2);
+  color: #ff671f;
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  padding: 10px 14px;
+  border-bottom: 2px solid var(--ux4g-border, #005691);
+}
+.ux4g-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.ux4g-table tr:hover td {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* ════ BULLETPROOF 1-PAGE PRINT CSS RULES ════ */
+@media print {
+  /* Hide all dashboard UI, layout containers, headers, sidebars, search bars */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Force only the printable invoice card to be visible */
+  .printable-invoice-card,
+  .printable-invoice-card * {
+    visibility: visible !important;
+  }
+
+  .printable-invoice-card {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    box-shadow: none !important;
+    border: none !important;
+    z-index: 999999 !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Hide buttons, modals header controls, no-print elements */
+  .no-print,
+  button,
+  header,
+  aside,
+  nav,
+  footer,
+  #ux4g-top-accessibility-strip,
+  #utility-bar {
+    display: none !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 6mm;
+  }
 }
 
