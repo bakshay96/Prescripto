@@ -90,6 +90,8 @@ interface ThemeContextValue {
   setFontSizeScale: (fs: FontSizeScale) => void;
   prescriptionColor: string;
   setPrescriptionColor: (c: string) => void;
+  isFullViewMode: boolean;
+  toggleFullViewMode: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
@@ -104,6 +106,8 @@ const ThemeContext = createContext<ThemeContextValue>({
   setFontSizeScale: () => {},
   prescriptionColor: "#1a237e",
   setPrescriptionColor: () => {},
+  isFullViewMode: false,
+  toggleFullViewMode: () => {},
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
@@ -112,6 +116,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [typingLang, setTypingLangState] = useState<TypingLang>("E");
   const [fontSizeScale, setFontSizeScaleState] = useState<FontSizeScale>(1.0);
   const [prescriptionColor, setPrescriptionColorState] = useState("#1a237e");
+  const [isFullViewMode, setIsFullViewMode] = useState(false);
+
+  const toggleFullViewMode = useCallback(() => {
+    setIsFullViewMode((prev) => !prev);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -169,6 +178,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       setFontSizeScale,
       prescriptionColor,
       setPrescriptionColor,
+      isFullViewMode,
+      toggleFullViewMode,
     }}>
       {children}
     </ThemeContext.Provider>

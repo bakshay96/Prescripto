@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { ThemeProvider, useTheme, THEMES } from "../components/ThemeContext";
 import UtilityBar from "../components/UtilityBar";
 import { GlobalTransliterationFAB } from "../components/GlobalTransliterationFAB";
+import SalesBroadcastBanner from "../components/SalesBroadcastBanner";
 import "../style.css";
 
 /**
@@ -51,6 +52,8 @@ export default function App({ Component, pageProps }: AppProps) {
       </Head>
       {/* Inject CSS vars into <html> on every theme change */}
       <CSSVarInjector />
+      {/* Global Sales & Promotional Advertisement Banner */}
+      <SalesBroadcastBanner />
       {/* Global always-visible utility bar */}
       <UtilityBar />
       <Component {...pageProps} />

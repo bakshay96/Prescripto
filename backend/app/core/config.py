@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 1 day
 
     # ── Razorpay Payment Gateway Config ───────────────────────────────────────
-    RAZORPAY_KEY_ID: str = "rzp_test_prescripto2026"
-    RAZORPAY_KEY_SECRET: str = "prescripto_razorpay_secret_key_2026"
+    RAZORPAY_KEY_ID: str = "rzp_live_ShxcWH099cPOXb"
+    RAZORPAY_KEY_SECRET: str = "pfJYGdFtL00KVRXHr0Vn8vFW"
 
     # ── MongoDB Atlas ─────────────────────────────────────────────────────────
     # Supports both MONGODB_URL (new) and MONGO_URI (legacy) env var names

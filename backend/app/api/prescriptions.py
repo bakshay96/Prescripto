@@ -322,6 +322,48 @@ def list_prescriptions(
     return [_format_rx(rx, db) for rx in rxs]
 
 
+@router.get("/search/{query}", summary="Search prescription by RX Number, Patient Name, or Village Name")
+def search_prescription_by_query(
+    query: str,
+    current_user: Optional[dict] = Depends(get_current_user_optional),
+):
+    """
+    Finds prescriptions matching RX number, prescription ID, patient name, village location, or diagnosis.
+    Returns a list of matching formatted prescriptions.
+    """
+    db = get_db()
+    q = query.strip()
+    if not q:
+        return []
+
+    # 1. Match patient IDs by name or village location
+    matching_patients = list(db["patients"].find({
+        "$or": [
+            {"name": {"$regex": q, "$options": "i"}},
+            {"village_location": {"$regex": q, "$options": "i"}},
+        ]
+    }))
+    patient_ids = [p["_id"] for p in matching_patients]
+
+    # 2. Build multi-field prescription search query
+    rx_filter: dict = {
+        "$or": [
+            {"_id": q},
+            {"prescription_number": {"$regex": q, "$options": "i"}},
+            {"diagnosis": {"$regex": q, "$options": "i"}},
+        ]
+    }
+    if patient_ids:
+        rx_filter["$or"].append({"patient_id": {"$in": patient_ids}})
+
+    rxs = list(db["prescriptions"].find(rx_filter).sort("created_at", -1).limit(20))
+
+    if not rxs:
+        raise HTTPException(status_code=404, detail=f"No prescription found matching '{query}'")
+
+    return [_format_rx(rx, db) for rx in rxs]
+
+
 @router.get("/{prescription_id}")
 def get_prescription(
     prescription_id: str,

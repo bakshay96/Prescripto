@@ -30,6 +30,8 @@ export default function UtilityBar() {
     setTypingLang,
     fontSizeScale,
     setFontSizeScale,
+    isFullViewMode,
+    toggleFullViewMode,
   } = useTheme();
 
   const { pathname, push } = useRouter();
@@ -102,6 +104,35 @@ export default function UtilityBar() {
 
   return (
     <>
+      {/* Floating Exit Button when Full View Mode is active */}
+      {isFullViewMode && (
+        <button
+          type="button"
+          onClick={toggleFullViewMode}
+          title="Exit Full View Mode (Restore Top Navigation Bars)"
+          style={{
+            position: "fixed",
+            top: 8,
+            right: 16,
+            zIndex: 10001,
+            padding: "5px 12px",
+            borderRadius: 20,
+            background: "#ff671f",
+            color: "#ffffff",
+            fontWeight: 900,
+            fontSize: 10,
+            border: "none",
+            boxShadow: "0 4px 14px rgba(255,103,31,0.5)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
+          }}
+        >
+          <span>🖥️ Exit Full View</span>
+        </button>
+      )}
+
       {/* ══ Top Strip 1: UX4G Government Accessibility & Font Scale Bar ══ */}
       <div
         id="ux4g-top-accessibility-strip"
@@ -121,13 +152,36 @@ export default function UtilityBar() {
           color: "#90caf9",
           fontSize: 10,
           fontFamily: "'Inter', sans-serif",
+          transform: isFullViewMode ? "translateY(-100%)" : "translateY(0)",
+          transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         }}
       >
-        {/* Left: Branding */}
+        {/* Left: Branding & Full View Toggle */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontWeight: 800, color: "#ff671f", letterSpacing: "0.5px" }}>
             ⚕️ PRESCRIPTO HEALTHCARE PLATFORM
           </span>
+          <button
+            type="button"
+            onClick={toggleFullViewMode}
+            title="Auto-hide top navigation bars for 100% full view screen"
+            style={{
+              padding: "1px 7px",
+              border: "1px solid #ff671f",
+              borderRadius: 4,
+              background: isFullViewMode ? "#ff671f" : "rgba(255,103,31,0.15)",
+              color: "#ffffff",
+              fontWeight: 800,
+              fontSize: 9,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 3,
+            }}
+          >
+            <span>🖥️</span>
+            <span>Full View</span>
+          </button>
         </div>
 
         {/* Right: Accessibility Controls (A-, A, A+ font scale, Transliteration Mode, UI Lang) */}
@@ -196,7 +250,7 @@ export default function UtilityBar() {
         id="utility-bar"
         style={{
           position: "fixed",
-          top: 28,
+          top: isFullViewMode ? 0 : 28,
           left: 0,
           right: 0,
           zIndex: 9999,
@@ -212,6 +266,8 @@ export default function UtilityBar() {
           backdropFilter: "blur(16px)",
           fontFamily: "'Inter','Noto Sans Devanagari',Arial,sans-serif",
           fontSize: `${13 * fontSizeScale}px`,
+          transform: isFullViewMode ? "translateY(-100%)" : "translateY(0)",
+          transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), top 0.3s ease",
         }}
       >
         {/* Left: Logo + Nav */}
@@ -303,38 +359,47 @@ export default function UtilityBar() {
             })}
           </div>
 
-          {/* Theme / Contrast Switcher */}
+          {/* Centralized UI Theme Switcher */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              background: theme.inputBg,
+              gap: 2,
+              background: "rgba(0,0,0,0.3)",
               border: `1px solid ${theme.border}`,
-              borderRadius: 9,
-              overflow: "hidden",
+              borderRadius: 8,
+              padding: 2,
             }}
           >
-            {Object.values(THEMES).map((t) => {
+            {[
+              { id: "govblue", label: "UX4G Gov", emoji: "🏛️" },
+              { id: "dark", label: "Dark", emoji: "🌙" },
+              { id: "light", label: "Light", emoji: "☀️" },
+              { id: "forest", label: "Emerald", emoji: "🌿" },
+            ].map((t) => {
               const active = themeId === t.id;
               return (
                 <button
                   key={t.id}
                   onClick={() => setTheme(t.id as ThemeId)}
-                  title={t.label}
+                  title={`Switch to ${t.label} Theme`}
                   style={{
-                    padding: "3px 8px",
+                    padding: "3px 7px",
                     border: "none",
-                    borderRadius: 8,
+                    borderRadius: 6,
                     background: active ? theme.accent : "transparent",
-                    color: active ? "#fff" : theme.textMuted,
-                    fontWeight: 700,
+                    color: active ? "#ffffff" : theme.textMuted,
+                    fontWeight: active ? 900 : 600,
                     cursor: "pointer",
-                    fontSize: 11,
-                    transition: "all 0.15s",
-                    whiteSpace: "nowrap",
+                    fontSize: 10,
+                    transition: "all 0.15s ease",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 3,
                   }}
                 >
-                  {t.emoji}
+                  <span>{t.emoji}</span>
+                  <span>{t.label}</span>
                 </button>
               );
             })}

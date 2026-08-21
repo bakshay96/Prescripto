@@ -9,7 +9,7 @@ Provides:
 All data stored in MongoDB.
 """
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict
@@ -375,6 +375,129 @@ def list_broadcast_messages(_: dict = Depends(require_master_admin)):
             "created_at": m.get("created_at"),
         })
     return result
+
+
+# ─── Subscription Plan & Custom Pricing Management (Master Admin) ─────────────
+
+class PlanConfigInput(BaseModel):
+    plan_key: str
+    label: str
+    amount_inr: float
+    duration_days: int = 30
+    features: List[str] = []
+    is_active: bool = True
+
+
+class CustomHospitalSubInput(BaseModel):
+    plan: str
+    custom_price_inr: float
+    duration_days: int = 30
+    notes: Optional[str] = None
+
+
+@router.get("/plans", summary="Master Admin: List all configurable subscription plans")
+def get_admin_plans(_: dict = Depends(require_master_admin)):
+    """Returns all subscription plans and prices configured in MongoDB."""
+    db = get_db()
+    plans = list(db["subscription_plans"].find())
+    if not plans:
+        # Seed defaults
+        defaults = [
+            {"_id": "TRIAL_7D", "plan_key": "TRIAL_7D", "label": "7-Day Free Trial", "amount": 0, "currency": "INR", "duration_days": 7, "features": ["OPD Prescription Writer", "7-Day Access"], "is_active": True},
+            {"_id": "PRO", "plan_key": "PRO", "label": "PRO Plan (Monthly)", "amount": 99900, "currency": "INR", "duration_days": 30, "features": ["Unlimited Prescriptions", "Medical Inventory Sync", "WhatsApp & SMS"], "is_active": True},
+            {"_id": "ENTERPRISE", "plan_key": "ENTERPRISE", "label": "ENTERPRISE Plan (Monthly)", "amount": 249900, "currency": "INR", "duration_days": 30, "features": ["Multi-Doctor Sync", "Patient History Analytics", "Priority Support"], "is_active": True},
+        ]
+        for d in defaults:
+            db["subscription_plans"].update_one({"_id": d["_id"]}, {"$set": d}, upsert=True)
+        plans = defaults
+
+    res = []
+    for p in plans:
+        amt = float(p.get("amount", 0))
+        res.append({
+            "plan_key": p.get("plan_key", "").upper(),
+            "label": p.get("label", ""),
+            "amount_inr": amt / 100.0 if amt > 0 else 0,
+            "amount_paise": int(amt),
+            "currency": p.get("currency", "INR"),
+            "duration_days": int(p.get("duration_days", 30)),
+            "features": p.get("features", []),
+            "is_active": bool(p.get("is_active", True)),
+        })
+    return res
+
+
+@router.post("/plans", summary="Master Admin: Create or update a subscription plan & price")
+def save_admin_plan(
+    payload: PlanConfigInput,
+    _: dict = Depends(require_master_admin),
+):
+    """Creates a new plan or updates existing plan price, duration, and features."""
+    db = get_db()
+    plan_key = payload.plan_key.strip().upper()
+    amount_paise = int(payload.amount_inr * 100)
+    now = datetime.now(timezone.utc).isoformat()
+
+    doc = {
+        "_id": plan_key,
+        "plan_key": plan_key,
+        "label": payload.label.strip(),
+        "amount": amount_paise,
+        "currency": "INR",
+        "duration_days": payload.duration_days,
+        "features": payload.features,
+        "is_active": payload.is_active,
+        "updated_at": now,
+    }
+
+    db["subscription_plans"].update_one({"_id": plan_key}, {"$set": doc}, upsert=True)
+    return {
+        "message": f"Subscription plan '{plan_key}' configured successfully! Price set to ₹{payload.amount_inr}",
+        "plan": doc,
+    }
+
+
+@router.post("/hospitals/{clinic_id}/custom-subscription", summary="Master Admin: Override & set custom subscription plan and price for a hospital")
+def set_custom_hospital_subscription(
+    clinic_id: str,
+    payload: CustomHospitalSubInput,
+    _: dict = Depends(require_master_admin),
+):
+    """Sets a custom subscription plan, custom price, and validity duration directly for a specific hospital user."""
+    db = get_db()
+    now_dt = datetime.now(timezone.utc)
+    valid_until_dt = now_dt + timedelta(days=payload.duration_days)
+    valid_until_str = valid_until_dt.isoformat()
+
+    sub_doc = {
+        "clinic_id": clinic_id,
+        "plan": payload.plan.upper(),
+        "custom_price_inr": payload.custom_price_inr,
+        "valid_until": valid_until_str,
+        "is_active": True,
+        "notes": payload.notes,
+        "updated_at": now_dt.isoformat(),
+    }
+    db["subscriptions"].update_one({"clinic_id": clinic_id}, {"$set": sub_doc}, upsert=True)
+
+    # Log payment record for auditing
+    db["payment_records"].insert_one({
+        "_id": str(uuid.uuid4()),
+        "clinic_id": clinic_id,
+        "user_id": "MASTER_ADMIN",
+        "order_id": f"admin_custom_{uuid.uuid4().hex[:8]}",
+        "payment_id": f"admin_grant_{uuid.uuid4().hex[:8]}",
+        "plan": payload.plan.upper(),
+        "amount": payload.custom_price_inr,
+        "currency": "INR",
+        "status": "MASTER_ADMIN_GRANTED",
+        "verified_at": now_dt.isoformat(),
+    })
+
+    return {
+        "message": f"Custom subscription plan '{payload.plan}' (Price: ₹{payload.custom_price_inr}) assigned to hospital successfully until {valid_until_str[:10]}!",
+        "subscription": sub_doc,
+    }
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
