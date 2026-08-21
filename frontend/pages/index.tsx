@@ -1,7 +1,9 @@
 import Head from "next/head";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { apiFetch, getToken } from "../utils/api";
+import { useRouter } from "next/router";
+import { apiFetch, getToken, getUser } from "../utils/api";
+import { getDefaultRouteForRole } from "../components/RoleGuard";
 
 const ROUTES = [
   {
@@ -62,10 +64,19 @@ interface DashStats {
 }
 
 export default function IndexPage() {
+  const router = useRouter();
   const [hovered, setHovered] = useState<string | null>(null);
   const [stats, setStats] = useState<DashStats>({
     prescriptions: "—", medicines: "—", patients: "—", pending: "—",
   });
+
+  useEffect(() => {
+    const user = getUser();
+    if (user) {
+      router.replace(getDefaultRouteForRole(user.role));
+      return;
+    }
+  }, [router]);
 
   useEffect(() => {
     const token = getToken();

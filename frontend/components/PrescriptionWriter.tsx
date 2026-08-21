@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   listPatients,
   quickCreatePatient,
@@ -16,6 +16,7 @@ import PrescriptionPrintTemplate, {
   openPrintWindow,
   PrescriptionPrintData,
 } from "./PrescriptionPrintTemplate";
+import { TransliteratedInput, TransliteratedTextArea } from "./TransliteratedInput";
 
 export type MedType = "Tab" | "Cap" | "Syp" | "Inj" | "Oint" | "Drop";
 
@@ -44,18 +45,11 @@ const QUICK_DOSE_PRESETS = [
   { label: "0-0-1", m: "0", a: "0", n: "1" },
   { label: "1-0-0", m: "1", a: "0", n: "0" },
   { label: "½-0-½", m: "½", a: "0", n: "½" },
-  { label: "½-0-0", m: "½", a: "0", n: "0" },
-  { label: "0-0-½", m: "0", a: "0", n: "½" },
-  { label: "SOS",   m: "SOS", a: "", n: "" },
 ];
-
-function uid() {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
-}
 
 function newRow(): RxRow {
   return {
-    id: uid(),
+    id: Math.random().toString(36).substr(2, 9),
     medType: "Tab",
     medicineName: "",
     isCustom: false,
@@ -63,13 +57,26 @@ function newRow(): RxRow {
     morning: "1",
     afternoon: "0",
     night: "1",
-    durationDays: 3,
+    durationDays: 5,
     timing: "After Meal",
-    instructions: "",
+    instructions: "जेवणानंतर घ्यावे (Take after food)",
   };
 }
 
-// ── Medicine Autocomplete Input Component ─────────────────────────────
+function parseDoseNum(val: string): number {
+  if (val === "½") return 0.5;
+  const parsed = parseFloat(val);
+  return isNaN(parsed) ? 0 : parsed;
+}
+
+function calculateTotalQty(row: RxRow): number {
+  const daily = parseDoseNum(row.morning) + parseDoseNum(row.afternoon) + parseDoseNum(row.night);
+  return Math.ceil(daily * (row.durationDays || 1));
+}
+
+/**
+ * Autocomplete Input Component for Medicines with Multi-Theme Support
+ */
 function MedicineSearchInput({
   value,
   onChange,
@@ -81,132 +88,115 @@ function MedicineSearchInput({
 }) {
   const [query, setQuery] = useState(value);
   const [suggestions, setSuggestions] = useState<MedicineAutocomplete[]>([]);
-  const [open, setOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  const fetchSuggestions = useCallback(async (q: string) => {
-    try {
-      setLoading(true);
-      const res = await autocompleteMedicines(q);
-      setSuggestions(res);
-    } catch {
-      setSuggestions([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
     setQuery(value);
   }, [value]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchSuggestions(query);
-    }, 200);
-    return () => clearTimeout(timer);
-  }, [query, fetchSuggestions]);
+  const fetchSuggestions = async (searchTerm: string) => {
+    if (!searchTerm || searchTerm.trim().length < 1) {
+      setSuggestions([]);
+      setIsOpen(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await autocompleteMedicines(searchTerm);
+      setSuggestions(res);
+      setIsOpen(true);
+    } catch {
+      setSuggestions([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (val: string) => {
+    setQuery(val);
+    onChange(val, undefined, true);
+    fetchSuggestions(val);
+  };
 
   const handleSelect = (item: MedicineAutocomplete) => {
     setQuery(item.name);
-    setOpen(false);
     onChange(item.name, item.id, false);
-  };
-
-  const handleCustom = (customName: string) => {
-    setQuery(customName);
-    setOpen(false);
-    onChange(customName, undefined, true);
+    setIsOpen(false);
   };
 
   return (
     <div className="relative w-full">
-      <input
-        type="text"
+      <TransliteratedInput
         value={query}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setOpen(true);
-          onChange(e.target.value, undefined, true);
+        onChange={handleInputChange}
+        onFocus={() => {
+          if (query.trim().length >= 1) fetchSuggestions(query);
         }}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 200)}
-        placeholder="Search medicine or type custom name…"
-        className={`w-full rounded-xl border px-3 py-2 text-xs focus:outline-none transition-all ${
+        placeholder="Type medicine name (e.g. Paracetamol 500mg)…"
+        className={`w-full rounded-lg border px-3 py-1.5 text-xs font-bold focus:outline-none transition-all ${
           isDark
-            ? "bg-slate-950 border-slate-800 text-slate-100 focus:border-red-500 placeholder-slate-600"
-            : "bg-white border-slate-300 text-slate-900 focus:border-red-500"
+            ? "bg-slate-900 border-slate-700 text-white focus:border-red-500 placeholder-slate-500"
+            : "bg-white border-slate-300 text-slate-900 focus:border-red-500 placeholder-slate-400"
         }`}
       />
-      {open && query.trim().length > 0 && (
+
+      {isOpen && (
         <div
-          className={`absolute z-50 left-0 right-0 mt-1 rounded-xl border shadow-2xl overflow-hidden max-h-56 overflow-y-auto ${
-            isDark ? "bg-slate-900 border-slate-700" : "bg-white border-slate-200"
+          className={`absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border shadow-2xl max-h-48 overflow-y-auto text-xs ${
+            isDark ? "bg-slate-900 border-slate-700 text-slate-100" : "bg-white border-slate-200 text-slate-900"
           }`}
         >
-          {loading && (
-            <div className="px-3 py-2 text-xs text-slate-500">Searching inventory…</div>
-          )}
-          {!loading && suggestions.length > 0 && (
-            <div>
-              <div className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-slate-500 bg-slate-950/50" : "text-slate-400 bg-slate-100"}`}>
-                From Store Inventory
-              </div>
-              {suggestions.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onMouseDown={() => handleSelect(item)}
-                  className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between transition-colors ${
-                    isDark ? "hover:bg-slate-800 text-slate-100" : "hover:bg-slate-50 text-slate-900"
-                  }`}
-                >
-                  <div>
-                    <span className="font-bold">{item.name}</span>
-                    <span className={`ml-2 text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                      ({item.category})
-                    </span>
-                  </div>
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${item.is_low_stock ? "bg-amber-950 text-amber-400" : "bg-emerald-950 text-emerald-400"}`}>
-                    Stock: {item.stock_quantity}
-                  </span>
-                </button>
-              ))}
+          {loading && <div className="p-2.5 text-slate-400 text-center">Searching pharmacy stock…</div>}
+
+          {!loading && suggestions.length === 0 && (
+            <div className="p-2.5 text-slate-400 text-center">
+              No matching stock. <span className="text-red-500 font-bold">Press Enter to add "{query}" as custom entry</span>
             </div>
           )}
-          {!loading && (
-            <button
-              type="button"
-              onMouseDown={() => handleCustom(query)}
-              className={`w-full text-left px-3 py-2.5 text-xs font-bold flex items-center gap-2 border-t ${
-                isDark
-                  ? "bg-amber-950/20 text-amber-400 border-amber-900/40 hover:bg-amber-950/40"
-                  : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
-              }`}
-            >
-              <span>➕</span>
-              <span>Add &ldquo;<strong>{query}</strong>&rdquo; as Custom Drug</span>
-            </button>
-          )}
+
+          {!loading &&
+            suggestions.map((s) => (
+              <div
+                key={s.id}
+                onClick={() => handleSelect(s)}
+                className={`p-2.5 cursor-pointer flex items-center justify-between border-b last:border-0 transition-all ${
+                  isDark ? "border-slate-800 hover:bg-slate-800" : "border-slate-100 hover:bg-slate-100"
+                }`}
+              >
+                <div>
+                  <span className={`font-extrabold ${isDark ? "text-white" : "text-slate-900"}`}>{s.name}</span>
+                  <span className={`ml-2 text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>({s.category || "General"})</span>
+                </div>
+                <div className="text-right text-[10px]">
+                  <span className={`font-bold ${s.stock_quantity > 10 ? "text-emerald-500" : "text-amber-500"}`}>
+                    Stock: {s.stock_quantity}
+                  </span>
+                  <span className={`ml-2 ${isDark ? "text-slate-400" : "text-slate-500"}`}>₹{(s as any).price || 0}</span>
+                </div>
+              </div>
+            ))}
         </div>
       )}
     </div>
   );
 }
 
-// ── Quick Add Patient Modal ───────────────────────────────────────────
+/**
+ * Quick Add New Patient Modal
+ */
 function QuickAddPatientModal({
-  isDark = true,
   onAdd,
   onClose,
+  isDark = true,
 }: {
-  isDark?: boolean;
   onAdd: (patient: ApiPatient) => void;
   onClose: () => void;
+  isDark?: boolean;
 }) {
   const [name, setName] = useState("");
   const [village, setVillage] = useState("");
-  const [dob, setDob] = useState("1990-01-01");
+  const [dob, setDob] = useState("1995-01-01");
   const [gender, setGender] = useState<"MALE" | "FEMALE" | "OTHER">("MALE");
   const [phone, setPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -214,20 +204,24 @@ function QuickAddPatientModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      setErr("Patient name is required.");
+      return;
+    }
+
     setSubmitting(true);
     setErr(null);
     try {
-      const created = await quickCreatePatient({
-        name: name.trim(),
-        village_location: village.trim(),
+      const res = await quickCreatePatient({
+        name,
+        village_location: village,
         date_of_birth: dob,
         gender,
-        phone: phone.trim() || undefined,
+        phone,
       });
-      onAdd(created);
-    } catch (e: any) {
-      setErr(e.message || "Failed to create patient");
+      onAdd(res);
+    } catch (error: any) {
+      setErr(error.message || "Failed to create patient");
     } finally {
       setSubmitting(false);
     }
@@ -235,19 +229,23 @@ function QuickAddPatientModal({
 
   const inputClass = `w-full rounded-xl border px-3 py-2 text-xs focus:outline-none transition-all ${
     isDark
-      ? "bg-slate-950 border-slate-800 text-slate-100 focus:border-red-500 placeholder-slate-600"
+      ? "bg-slate-950 border-slate-800 text-slate-100 focus:border-red-500"
       : "bg-white border-slate-300 text-slate-900 focus:border-red-500"
   }`;
   const labelClass = `block text-xs font-semibold mb-1 ${isDark ? "text-slate-400" : "text-slate-600"}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-      <div className={`rounded-2xl border w-full max-w-md shadow-2xl p-6 ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"}`}>
-        <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
-          <h3 className="text-base font-extrabold text-white flex items-center gap-2">
-            <span>👤</span> Add New Patient to Database
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div
+        className={`w-full max-w-md rounded-2xl border p-6 space-y-4 shadow-2xl ${
+          isDark ? "bg-slate-900 border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"
+        }`}
+      >
+        <div className={`flex items-center justify-between pb-3 border-b ${isDark ? "border-slate-800" : "border-slate-200"}`}>
+          <h3 className="text-sm font-extrabold flex items-center gap-2">
+            <span className="text-red-500">➕</span> Quick Register Patient
           </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
+          <button onClick={onClose} className={isDark ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"}>✕</button>
         </div>
 
         {err && <div className="mb-4 text-xs text-rose-400 bg-rose-950/40 p-2.5 rounded-lg border border-rose-800">{err}</div>}
@@ -255,11 +253,11 @@ function QuickAddPatientModal({
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
             <label className={labelClass}>Patient Name *</label>
-            <input type="text" required placeholder="e.g. Akshay Bombatkar" value={name} onChange={e => setName(e.target.value)} className={inputClass} />
+            <TransliteratedInput required placeholder="e.g. Akshay Bombatkar" value={name} onChange={setName} className={inputClass} />
           </div>
           <div>
             <label className={labelClass}>Village / Location</label>
-            <input type="text" placeholder="e.g. Bhandari, Motala" value={village} onChange={e => setVillage(e.target.value)} className={inputClass} />
+            <TransliteratedInput placeholder="e.g. Bhandari, Motala" value={village} onChange={setVillage} className={inputClass} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -280,10 +278,16 @@ function QuickAddPatientModal({
             <input type="tel" placeholder="e.g. 9823456789" value={phone} onChange={e => setPhone(e.target.value)} className={inputClass} />
           </div>
 
-          <div className="flex justify-end gap-3 pt-3 mt-4 border-t border-slate-800">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white">Cancel</button>
-            <button type="submit" disabled={submitting} className="px-5 py-2 bg-gradient-to-r from-red-600 to-rose-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-red-500/20">
-              {submitting ? "Saving to DB…" : "Save & Select Patient"}
+          <div className={`flex items-center justify-end gap-3 pt-3 border-t ${isDark ? "border-slate-800" : "border-slate-200"}`}>
+            <button type="button" onClick={onClose} className={`px-4 py-2 text-xs font-bold ${isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"}`}>
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="px-5 py-2 text-xs font-extrabold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-lg shadow-red-500/20"
+            >
+              {submitting ? "Registering…" : "Save & Select Patient"}
             </button>
           </div>
         </form>
@@ -313,6 +317,51 @@ export default function PrescriptionWriter({
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  // Split pane width state & drag handlers (Default 50% - 50% full width split)
+  const [leftWidthPct, setLeftWidthPct] = useState<number>(50);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const flexContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("rx_writer_split_pct");
+    if (saved) {
+      const parsed = parseFloat(saved);
+      if (!isNaN(parsed) && parsed >= 30 && parsed <= 85) {
+        setLeftWidthPct(parsed);
+      }
+    }
+  }, []);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!flexContainerRef.current) return;
+      const rect = flexContainerRef.current.getBoundingClientRect();
+      const relativeX = e.clientX - rect.left;
+      const newPct = (relativeX / rect.width) * 100;
+      const clampedPct = Math.min(85, Math.max(30, newPct));
+      setLeftWidthPct(clampedPct);
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      localStorage.setItem("rx_writer_split_pct", String(leftWidthPct));
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging, leftWidthPct]);
+
   // Fetch patient list from DB
   const loadPatients = useCallback(async (search?: string) => {
     try {
@@ -335,68 +384,56 @@ export default function PrescriptionWriter({
     loadPatients(val);
   };
 
-  // Row update handlers
-  const updateRow = (id: string, patch: Partial<RxRow>) => {
-    setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
-  };
-
-  const removeRow = (id: string) => {
-    setRows((rs) => rs.filter((r) => r.id !== id));
-  };
-
-  const addRow = () => setRows((rs) => [...rs, newRow()]);
-
   const selectedPatient = patients.find((p) => p.id === selectedPatientId);
 
-  // ── Calculate total prescribed quantity (auto) ──
-  const calculateTotalQty = (r: RxRow): number => {
-    const parseVal = (v: string) => {
-      if (v === "½") return 0.5;
-      const parsed = parseFloat(v);
-      return isNaN(parsed) ? 0 : parsed;
-    };
-    const dailyCount = parseVal(r.morning) + parseVal(r.afternoon) + parseVal(r.night);
-    const total = Math.ceil(dailyCount * (r.durationDays || 1));
-    return total > 0 ? total : 6;
-  };
+  // ── Row Manipulations ──
+  const addRow = () => setRows((prev) => [...prev, newRow()]);
+  const removeRow = (id: string) => setRows((prev) => prev.filter((r) => r.id !== id));
+  const updateRow = (id: string, patch: Partial<RxRow>) =>
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
 
-  // ── Construct Print Data shape ──
+  // Build print data object for live preview
   const buildCurrentPrintData = (): PrescriptionPrintData => {
-    const patName = selectedPatient ? selectedPatient.name : (patientSearch || "PATIENT NAME");
-    const patLocation = selectedPatient ? selectedPatient.village_location : "Bhandari";
-    const patAge = selectedPatient?.age?.formatted || "30y";
-    const patGender = selectedPatient?.gender || "MALE";
-
+    const validRows = rows.filter((r) => r.medicineName.trim().length > 0);
     return {
-      prescriptionNumber: `RX-${new Date().getFullYear()}-0001`,
-      date: new Date().toLocaleDateString("en-IN"),
-      uhid: "U.H.I.D.",
-      doctorProfile: profile,
-      patientName: patName,
-      patientAgeFormatted: patAge,
-      patientGender: patGender,
-      patientLocation: patLocation,
-      diagnosis,
-      notes,
-      items: rows.map((r) => ({
-        medicineName: r.medicineName || "Paracetamol 500mg",
+      prescriptionNumber: "RX-DRAFT",
+      date: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+      doctorProfile: {
+        hospitalName: profile.hospitalName || "Suyog Hospital",
+        hospitalNameMr: profile.hospitalNameMr,
+        doctorName: profile.doctorName || "Dr. Vikas Karande",
+        doctorNameMr: profile.doctorNameMr,
+        qualifications: profile.qualifications || "M.D. (Medicine)",
+        regNumber: profile.regNumber || "MMC 2012/03/0842",
+        specialties: profile.specialties || "Multispeciality & Critical Care Center",
+        address: profile.address || "Main Road, Near Bus Stand, Motala, Dist. Buldhana",
+        phone: profile.phone || "07267-242100 | Emergency: 98230 00000",
+        facilities: profile.facilities || ["General Medicine", "ICU & OPD", "Laboratory"],
+        clinicHours: profile.clinicHours || "Morning 9 to 1 | Evening 5 to 9",
+        signatureDataUrl: profile.signatureDataUrl ?? null,
+      },
+      patientName: selectedPatient ? selectedPatient.name : "Patient Name",
+      patientAgeFormatted: selectedPatient?.age?.formatted || "N/A",
+      patientGender: selectedPatient?.gender || "M",
+      patientLocation: selectedPatient ? selectedPatient.village_location : "Village Location",
+      diagnosis: diagnosis || "General Consultation",
+      items: validRows.map((r) => ({
         medType: r.medType,
-        dosage: r.dosage,
+        medicineName: r.medicineName,
         morning: r.morning,
         afternoon: r.afternoon,
         night: r.night,
         durationDays: r.durationDays,
         timing: r.timing,
-        isCustom: r.isCustom,
-        instructions: r.instructions,
       })),
+      notes: notes || "Take warm water. Rest well.",
     };
   };
 
-  // ── Direct Browser Window Print ──
+  // ── Direct Window Print (No DB required) ──
   const handleDirectPrint = () => {
     const data = buildCurrentPrintData();
-    openPrintWindow(data, lang);
+    openPrintWindow(data);
   };
 
   // ── Save & Print Prescription via Server ──
@@ -443,12 +480,10 @@ export default function PrescriptionWriter({
         const printUrl = getPrintUrl(createdRx.id, lang);
         window.open(printUrl, "_blank");
       } else {
-        // Direct print fallback
         handleDirectPrint();
       }
     } catch (err: any) {
       console.warn("DB save error, falling back to direct print window", err);
-      // Fallback print directly
       handleDirectPrint();
       setMessage({
         type: "success",
@@ -459,20 +494,59 @@ export default function PrescriptionWriter({
     }
   };
 
-  const cardClass = `rounded-2xl border p-5 space-y-4 ${
-    isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"
+  // Multi-theme responsive classes
+  const cardClass = `rounded-2xl border p-5 space-y-4 shadow-xl ${
+    isDark ? "bg-slate-900/90 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-900 shadow-sm"
   }`;
-  const labelClass = `block text-xs font-semibold mb-1 ${isDark ? "text-slate-400" : "text-slate-600"}`;
-  const inputClass = `w-full rounded-xl border px-3 py-2 text-xs focus:outline-none transition-all ${
+  const labelClass = `block text-xs font-bold mb-1.5 ${isDark ? "text-slate-300" : "text-slate-700"}`;
+  const inputClass = `w-full rounded-xl border px-3.5 py-2.5 text-xs font-semibold focus:outline-none transition-all ${
     isDark
-      ? "bg-slate-950 border-slate-800 text-slate-100 focus:border-red-500 placeholder-slate-600"
-      : "bg-white border-slate-300 text-slate-900 focus:border-red-500"
+      ? "bg-slate-950 border-slate-700 text-white focus:border-red-500 placeholder-slate-500"
+      : "bg-slate-50 border-slate-300 text-slate-900 focus:border-red-500 placeholder-slate-400"
   }`;
 
+  const rowCardClass = `p-4 rounded-xl space-y-3 border transition-all ${
+    isDark ? "bg-slate-950/90 border-slate-800 text-slate-100" : "bg-slate-50 border-slate-200 text-slate-900"
+  }`;
+
+  const rowSelectClass = `rounded-lg border px-2 py-1.5 text-xs font-bold focus:outline-none transition-all ${
+    isDark ? "bg-slate-900 border-slate-700 text-white" : "bg-white border-slate-300 text-slate-900"
+  }`;
+
+  const rowInputClass = `w-full rounded-lg border px-2 py-1.5 text-xs font-bold text-center focus:outline-none transition-all ${
+    isDark ? "bg-slate-900 border-slate-700 text-white" : "bg-white border-slate-300 text-slate-900"
+  }`;
+
+  const rowPresetClass = `px-2 py-1 rounded-md text-[10px] font-bold border transition-all ${
+    isDark
+      ? "bg-slate-900 border-slate-700 text-slate-300 hover:border-red-500 hover:text-white"
+      : "bg-white border-slate-300 text-slate-700 hover:border-red-500 hover:text-slate-900"
+  }`;
+
+  const headerBorderClass = `pb-3 border-b ${isDark ? "border-slate-800" : "border-slate-200"}`;
+
   return (
-    <div style={{ display: "flex", gap: 24, alignItems: "flex-start", width: "100%" }}>
-      {/* ── LEFT: Form ── */}
-      <div style={{ flex: "1 1 0", minWidth: 0 }} className="space-y-6">
+    <div
+      ref={flexContainerRef}
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        width: "100%",
+        gap: 0,
+        position: "relative",
+        userSelect: isDragging ? "none" : "auto",
+      }}
+    >
+      {/* ── LEFT: Form Container ── */}
+      <div
+        style={{
+          width: `${leftWidthPct}%`,
+          flexShrink: 0,
+          paddingRight: 12,
+          minWidth: 280,
+        }}
+        className="space-y-6"
+      >
       {message && (
         <div
           className={`p-4 rounded-xl text-xs font-bold border flex items-center justify-between ${
@@ -499,22 +573,25 @@ export default function PrescriptionWriter({
           <button
             type="button"
             onClick={handleDirectPrint}
-            className="px-4 py-1.5 rounded-xl font-bold text-xs bg-slate-800 text-white border border-slate-700 hover:bg-slate-700 transition-all"
+            className={`px-4 py-1.5 rounded-xl font-bold text-xs border transition-all ${
+              isDark ? "bg-slate-800 text-white border-slate-700 hover:bg-slate-700" : "bg-slate-900 text-white border-slate-800 hover:bg-slate-800"
+            }`}
           >
             📄 Quick Print Window
           </button>
         </div>
       </div>
+
       {/* ── Patient Selector ── */}
       <div className={cardClass}>
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className={`flex items-center justify-between ${headerBorderClass}`}>
           <div className="flex items-center gap-2 text-sm font-extrabold" style={{ color: isDark ? "white" : "#0f172a" }}>
             <span className="text-red-500">👤</span> 1. Select Patient
           </div>
           <button
             type="button"
             onClick={() => setShowAddPatient(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs bg-red-600/10 text-red-400 border border-red-600/30 hover:bg-red-600/20 transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs bg-red-600/10 text-red-500 border border-red-600/30 hover:bg-red-600/20 transition-all"
           >
             ➕ Add New Patient
           </button>
@@ -523,11 +600,10 @@ export default function PrescriptionWriter({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelClass}>Search Patient by Name or Village</label>
-            <input
-              type="text"
+            <TransliteratedInput
               placeholder="Type patient name…"
               value={patientSearch}
-              onChange={(e) => handlePatientSearchChange(e.target.value)}
+              onChange={(val) => handlePatientSearchChange(val)}
               className={inputClass}
             />
           </div>
@@ -549,12 +625,14 @@ export default function PrescriptionWriter({
         </div>
 
         {selectedPatient && (
-          <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
+          <div className={`p-3 rounded-xl border flex items-center justify-between text-xs ${
+            isDark ? "bg-slate-950 border-slate-800" : "bg-slate-100 border-slate-200"
+          }`}>
             <div>
-              <span className="font-extrabold text-white">{selectedPatient.name}</span>
-              <span className="ml-2 text-slate-400">• {selectedPatient.village_location}</span>
+              <span className={`font-extrabold ${isDark ? "text-white" : "text-slate-900"}`}>{selectedPatient.name}</span>
+              <span className={`ml-2 ${isDark ? "text-slate-400" : "text-slate-500"}`}>• {selectedPatient.village_location}</span>
             </div>
-            <div className="text-emerald-400 font-bold">
+            <div className="text-emerald-500 font-extrabold">
               Age: {selectedPatient.age?.formatted} | Gender: {selectedPatient.gender}
             </div>
           </div>
@@ -563,18 +641,17 @@ export default function PrescriptionWriter({
 
       {/* ── Diagnosis & Prescription Meta ── */}
       <div className={cardClass}>
-        <div className="flex items-center gap-2 text-sm font-extrabold text-white pb-3 border-b border-slate-800">
+        <div className={`flex items-center gap-2 text-sm font-extrabold ${headerBorderClass}`} style={{ color: isDark ? "white" : "#0f172a" }}>
           <span className="text-red-500">🩺</span> 2. Diagnosis &amp; Language
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="sm:col-span-2">
             <label className={labelClass}>Clinical Diagnosis / निदान *</label>
-            <input
-              type="text"
+            <TransliteratedInput
               required
               placeholder="e.g. Viral Fever, Hypertension, Diabetes"
               value={diagnosis}
-              onChange={(e) => setDiagnosis(e.target.value)}
+              onChange={(val) => setDiagnosis(val)}
               className={inputClass}
             />
           </div>
@@ -589,16 +666,16 @@ export default function PrescriptionWriter({
         </div>
       </div>
 
-      {/* ── Medicines Table ── */}
+      {/* ── Medicines Table Multi-Theme Container ── */}
       <div className={cardClass}>
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-          <div className="flex items-center gap-2 text-sm font-extrabold text-white">
+        <div className={`flex items-center justify-between ${headerBorderClass}`}>
+          <div className="flex items-center gap-2 text-sm font-extrabold" style={{ color: isDark ? "white" : "#0f172a" }}>
             <span className="text-red-500">💊</span> 3. Prescribed Medicines
           </div>
           <button
             type="button"
             onClick={addRow}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs bg-emerald-600/10 text-emerald-400 border border-emerald-600/30 hover:bg-emerald-600/20 transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs bg-emerald-600/10 text-emerald-500 border border-emerald-600/30 hover:bg-emerald-600/20 transition-all"
           >
             ➕ Add Medicine Row
           </button>
@@ -606,9 +683,9 @@ export default function PrescriptionWriter({
 
         <div className="space-y-4">
           {rows.map((r, idx) => (
-            <div key={r.id} className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+            <div key={r.id} className={rowCardClass}>
               <div className="flex items-center justify-between gap-2">
-                <span className="w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center text-xs font-bold">
+                <span className="w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center text-xs font-extrabold flex-shrink-0">
                   {idx + 1}
                 </span>
 
@@ -616,7 +693,7 @@ export default function PrescriptionWriter({
                 <select
                   value={r.medType}
                   onChange={(e) => updateRow(r.id, { medType: e.target.value as MedType })}
-                  className="rounded-lg border border-slate-800 bg-slate-900 text-white px-2 py-1.5 text-xs font-bold"
+                  className={rowSelectClass}
                 >
                   {MED_TYPES.map((t) => (
                     <option key={t} value={t}>{t}.</option>
@@ -639,7 +716,7 @@ export default function PrescriptionWriter({
                   type="button"
                   onClick={() => removeRow(r.id)}
                   disabled={rows.length === 1}
-                  className="text-rose-500 hover:text-rose-400 disabled:opacity-30 p-1"
+                  className="text-rose-500 hover:text-rose-400 disabled:opacity-30 p-1 flex-shrink-0 font-bold"
                 >
                   ✕
                 </button>
@@ -649,11 +726,11 @@ export default function PrescriptionWriter({
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 items-center text-xs">
                 {/* Morning */}
                 <div>
-                  <label className="text-[10px] text-slate-400 block mb-0.5">सकाळी (Morning)</label>
+                  <label className={`text-[10px] block mb-0.5 font-bold ${isDark ? "text-slate-400" : "text-slate-600"}`}>सकाळी (Morning)</label>
                   <select
                     value={r.morning}
                     onChange={(e) => updateRow(r.id, { morning: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg p-1.5 text-white text-xs font-bold"
+                    className={rowInputClass}
                   >
                     {DOSE_OPTIONS.map((opt) => (
                       <option key={opt} value={opt}>{opt}</option>
@@ -663,11 +740,11 @@ export default function PrescriptionWriter({
 
                 {/* Afternoon */}
                 <div>
-                  <label className="text-[10px] text-slate-400 block mb-0.5">दुपारी (Afternoon)</label>
+                  <label className={`text-[10px] block mb-0.5 font-bold ${isDark ? "text-slate-400" : "text-slate-600"}`}>दुपारी (Afternoon)</label>
                   <select
                     value={r.afternoon}
                     onChange={(e) => updateRow(r.id, { afternoon: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg p-1.5 text-white text-xs font-bold"
+                    className={rowInputClass}
                   >
                     {DOSE_OPTIONS.map((opt) => (
                       <option key={opt} value={opt}>{opt}</option>
@@ -677,11 +754,11 @@ export default function PrescriptionWriter({
 
                 {/* Night */}
                 <div>
-                  <label className="text-[10px] text-slate-400 block mb-0.5">रात्री (Night)</label>
+                  <label className={`text-[10px] block mb-0.5 font-bold ${isDark ? "text-slate-400" : "text-slate-600"}`}>रात्री (Night)</label>
                   <select
                     value={r.night}
                     onChange={(e) => updateRow(r.id, { night: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg p-1.5 text-white text-xs font-bold"
+                    className={rowInputClass}
                   >
                     {DOSE_OPTIONS.map((opt) => (
                       <option key={opt} value={opt}>{opt}</option>
@@ -691,24 +768,24 @@ export default function PrescriptionWriter({
 
                 {/* Duration */}
                 <div>
-                  <label className="text-[10px] text-slate-400 block mb-0.5">दिवस (Days)</label>
+                  <label className={`text-[10px] block mb-0.5 font-bold ${isDark ? "text-slate-400" : "text-slate-600"}`}>दिवस (Days)</label>
                   <input
                     type="number"
                     min={1}
                     max={90}
                     value={r.durationDays}
                     onChange={(e) => updateRow(r.id, { durationDays: parseInt(e.target.value) || 1 })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg p-1.5 text-white text-xs font-bold text-center"
+                    className={rowInputClass}
                   />
                 </div>
 
                 {/* Timing */}
                 <div>
-                  <label className="text-[10px] text-slate-400 block mb-0.5">Meal Timing</label>
+                  <label className={`text-[10px] block mb-0.5 font-bold ${isDark ? "text-slate-400" : "text-slate-600"}`}>Meal Timing</label>
                   <select
                     value={r.timing}
                     onChange={(e) => updateRow(r.id, { timing: e.target.value as any })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg p-1.5 text-white text-xs font-bold"
+                    className={rowInputClass}
                   >
                     <option value="After Meal">जेवनानंतर (After)</option>
                     <option value="Before Meal">जेवनाआधी (Before)</option>
@@ -718,18 +795,18 @@ export default function PrescriptionWriter({
 
               {/* Quick Presets row */}
               <div className="flex items-center gap-2 flex-wrap text-[10px]">
-                <span className="text-slate-500 font-semibold">Quick Doses:</span>
+                <span className={`font-extrabold ${isDark ? "text-slate-400" : "text-slate-600"}`}>Quick Doses:</span>
                 {QUICK_DOSE_PRESETS.map((p) => (
                   <button
                     key={p.label}
                     type="button"
                     onClick={() => updateRow(r.id, { morning: p.m, afternoon: p.a, night: p.n })}
-                    className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300 hover:border-red-500 hover:text-white"
+                    className={rowPresetClass}
                   >
                     {p.label}
                   </button>
                 ))}
-                <span className="ml-auto text-emerald-400 font-bold">
+                <span className="ml-auto text-emerald-500 font-extrabold">
                   Total Qty: {calculateTotalQty(r)}
                 </span>
               </div>
@@ -740,29 +817,30 @@ export default function PrescriptionWriter({
 
       {/* ── Advice / Notes ── */}
       <div className={cardClass}>
-        <div className="flex items-center gap-2 text-sm font-extrabold text-white pb-3 border-b border-slate-800">
+        <div className={`flex items-center gap-2 text-sm font-extrabold ${headerBorderClass}`} style={{ color: isDark ? "white" : "#0f172a" }}>
           <span className="text-red-500">📝</span> 4. Doctor Advice &amp; Notes / सूचना
         </div>
-        <textarea
+        <TransliteratedTextArea
           rows={3}
           placeholder="e.g. Drink plenty of warm water. Avoid cold & oily food. / पुरेसे गरम पाणी प्या. तळलेले व थंड पदार्थ टाळा."
           value={notes}
-          onChange={(e) => setNotes(e.target.value)}
+          onChange={(val) => setNotes(val)}
           className={inputClass}
-          style={{ fontFamily: "'Noto Sans Devanagari', Arial, sans-serif" }}
         />
       </div>
 
       {/* ── Submit & Server Print ── */}
       <div className={`flex items-center justify-between p-4 rounded-2xl border flex-wrap gap-4 ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"}`}>
-        <div className="text-xs" style={{ color: isDark ? "#64748b" : "#475569" }}>
+        <div className="text-xs font-semibold" style={{ color: isDark ? "#94a3b8" : "#475569" }}>
           💡 Save to generate a prescription number. Quick Print skips saving.
         </div>
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={handleDirectPrint}
-            className="px-4 py-3 rounded-xl font-bold text-xs text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-all"
+            className={`px-4 py-3 rounded-xl font-bold text-xs border transition-all ${
+              isDark ? "bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-700" : "bg-slate-100 text-slate-800 border-slate-300 hover:bg-slate-200"
+            }`}
           >
             📄 Instant Print Window
           </button>
@@ -790,22 +868,121 @@ export default function PrescriptionWriter({
       )}
       </div>{/* end left form */}
 
-      {/* ── RIGHT: Always-visible Live A4 Preview ── */}
-      <div style={{
-        width: 380,
-        flexShrink: 0,
-        position: "sticky",
-        top: 100,
-        maxHeight: "calc(100vh - 120px)",
-        overflowY: "auto",
-        display: "flex",
-        flexDirection: "column",
-        gap: 10,
-      }}>
-        <div className={`p-3 rounded-2xl border text-xs font-bold ${isDark ? "bg-amber-950/30 border-amber-800/40 text-amber-300" : "bg-amber-50 border-amber-200 text-amber-700"}`}>
-          📄 Live A4 Preview — updates as you type
+      {/* ── MIDDLE: Interactive Drag Resizable Splitter Bar & Preset Controls ── */}
+      <div
+        onMouseDown={handleMouseDown}
+        style={{
+          width: 16,
+          flexShrink: 0,
+          alignSelf: "stretch",
+          cursor: "col-resize",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "flex-start",
+          paddingTop: 100,
+          gap: 12,
+          zIndex: 10,
+          margin: "0 -4px",
+        }}
+        title="Drag left or right to adjust container width"
+      >
+        {/* Visual Grip Bar */}
+        <div
+          style={{
+            width: 6,
+            height: 160,
+            borderRadius: 6,
+            background: isDragging
+              ? "#ff671f"
+              : isDark
+              ? "rgba(255,255,255,0.2)"
+              : "rgba(0,0,0,0.15)",
+            boxShadow: isDragging ? "0 0 12px #ff671f" : "none",
+            transition: "background 0.15s",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#fff",
+            fontSize: 10,
+          }}
+        >
+          ⋮
         </div>
-        <div style={{ transform: "scale(0.72)", transformOrigin: "top left", width: "139%", pointerEvents: "none" }}>
+
+        {/* Quick Preset Buttons (50%, 60%, 70%) */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 4,
+            background: isDark ? "#0f172a" : "#f8fafc",
+            border: `1px solid ${isDark ? "#334155" : "#cbd5e1"}`,
+            borderRadius: 8,
+            padding: 3,
+            fontSize: 8,
+            fontWeight: 800,
+            color: isDark ? "#94a3b8" : "#475569",
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          {[
+            { label: "50%", pct: 50 },
+            { label: "60%", pct: 60 },
+            { label: "70%", pct: 70 },
+          ].map((p) => (
+            <button
+              key={p.pct}
+              type="button"
+              onClick={() => {
+                setLeftWidthPct(p.pct);
+                localStorage.setItem("rx_writer_split_pct", String(p.pct));
+              }}
+              style={{
+                border: "none",
+                padding: "3px 5px",
+                borderRadius: 4,
+                background: Math.round(leftWidthPct) === p.pct ? "#ff671f" : "transparent",
+                color: Math.round(leftWidthPct) === p.pct ? "#fff" : "inherit",
+                cursor: "pointer",
+                fontSize: 8,
+                fontWeight: 900,
+              }}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── RIGHT: Always-visible Live A4 Preview Container ── */}
+      <div
+        style={{
+          width: `${100 - leftWidthPct}%`,
+          flexShrink: 0,
+          paddingLeft: 12,
+          position: "sticky",
+          top: 100,
+          maxHeight: "calc(100vh - 120px)",
+          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: 10,
+        }}
+      >
+        <div className={`p-3 rounded-2xl border text-xs font-bold flex items-center justify-between ${isDark ? "bg-amber-950/30 border-amber-800/40 text-amber-300" : "bg-amber-50 border-amber-200 text-amber-700"}`}>
+          <span>📄 Live A4 Preview — updates as you type</span>
+          <span style={{ fontSize: 10, opacity: 0.8 }}>Width: {Math.round(100 - leftWidthPct)}%</span>
+        </div>
+        <div
+          style={{
+            transform: `scale(${(100 - leftWidthPct) / 50})`,
+            transformOrigin: "top left",
+            width: `${(50 / Math.max(1, 100 - leftWidthPct)) * 100}%`,
+            pointerEvents: "none",
+            transition: isDragging ? "none" : "transform 0.15s ease",
+          }}
+        >
           <PrescriptionPrintTemplate data={buildCurrentPrintData()} />
         </div>
       </div>

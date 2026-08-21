@@ -31,9 +31,10 @@ class Settings(BaseSettings):
 
     def get_mongo_url(self) -> str:
         """Returns MongoDB connection URL, preferring Atlas URI if set."""
-        if self.MONGO_URI and self.MONGO_URI.startswith("mongodb"):
-            return self.MONGO_URI
-        return self.MONGODB_URL
+        url = self.MONGO_URI if (self.MONGO_URI and self.MONGO_URI.startswith("mongodb")) else self.MONGODB_URL
+        if url.startswith("mongo_url="):
+            url = url.replace("mongo_url=", "", 1)
+        return url
 
     def get_mongo_db(self) -> str:
         """Returns MongoDB database name."""

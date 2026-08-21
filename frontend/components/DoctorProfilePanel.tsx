@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { getClinicProfile, updateClinicProfile, ClinicProfile } from "../utils/api";
 import { useTheme } from "./ThemeContext";
+import { TransliteratedInput, TransliteratedTextArea } from "./TransliteratedInput";
 
 export interface DoctorProfile {
   hospitalName: string;
@@ -105,25 +106,27 @@ export function useDoctorProfile() {
 function FacilityItem({
   value,
   index,
+  isDark,
   onChange,
   onDelete,
 }: {
   value: string;
   index: number;
+  isDark?: boolean;
   onChange: (i: number, val: string) => void;
   onDelete: (i: number) => void;
 }) {
   return (
     <div className="flex items-center gap-2 group">
-      <span className="text-slate-500 text-xs w-5 text-right">{index + 1}.</span>
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(index, e.target.value)}
-        className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-red-500 transition-all"
-        placeholder="e.g. हृदय रोग / Heart Disease"
-        style={{ fontFamily: "'Noto Sans Devanagari', Arial, sans-serif" }}
-      />
+      <span className={`text-xs w-5 text-right ${isDark ? "text-slate-500" : "text-slate-400"}`}>{index + 1}.</span>
+      <div className="flex-1">
+        <TransliteratedInput
+          value={value}
+          onChange={(val) => onChange(index, val)}
+          className={`w-full rounded-lg border px-3 py-1.5 text-xs focus:outline-none focus:border-red-500 transition-all ${isDark ? "bg-slate-950 border-slate-800 text-slate-100" : "bg-white border-slate-300 text-slate-900"}`}
+          placeholder="e.g. हृदय रोग / Heart Disease"
+        />
+      </div>
       <button
         type="button"
         onClick={() => onDelete(index)}
@@ -370,39 +373,43 @@ export default function DoctorProfilePanel({ isDark = true, onSaved }: { isDark?
           <div className="space-y-3">
             <div>
               <label className={labelClass}>Hospital Name (English)</label>
-              <input type="text" className={inputClass} value={local.hospitalName} onChange={(e) => updateField("hospitalName", e.target.value)} />
+              <TransliteratedInput value={local.hospitalName} onChange={(v) => updateField("hospitalName", v)} className={inputClass} placeholder="e.g. Suyog Hospital" />
             </div>
             <div>
               <label className={labelClass}>Hospital Name (Marathi / सुयोग हॉस्पिटल)</label>
-              <input type="text" className={inputClass} value={local.hospitalNameMr || ""} onChange={(e) => updateField("hospitalNameMr", e.target.value)} />
+              <TransliteratedInput value={local.hospitalNameMr || ""} onChange={(v) => updateField("hospitalNameMr", v)} className={inputClass} placeholder="e.g. सुयोग हॉस्पिटल" />
             </div>
             <div>
               <label className={labelClass}>Doctor Name (English)</label>
-              <input type="text" className={inputClass} value={local.doctorName} onChange={(e) => updateField("doctorName", e.target.value)} />
+              <TransliteratedInput value={local.doctorName} onChange={(v) => updateField("doctorName", v)} className={inputClass} placeholder="e.g. Dr. Vikas Karande" />
             </div>
             <div>
               <label className={labelClass}>Doctor Name (Marathi / डॉ. विकास वा. करांडे)</label>
-              <input type="text" className={inputClass} value={local.doctorNameMr || ""} onChange={(e) => updateField("doctorNameMr", e.target.value)} />
+              <TransliteratedInput value={local.doctorNameMr || ""} onChange={(v) => updateField("doctorNameMr", v)} className={inputClass} placeholder="e.g. डॉ. विकास वा. करांडे" />
             </div>
             <div>
               <label className={labelClass}>Qualifications</label>
-              <input type="text" className={inputClass} value={local.qualifications} onChange={(e) => updateField("qualifications", e.target.value)} />
+              <TransliteratedInput value={local.qualifications} onChange={(v) => updateField("qualifications", v)} className={inputClass} placeholder="e.g. M.B.B.S., M.D." />
+            </div>
+            <div>
+              <label className={labelClass}>Specialties / विशेषज्ञता</label>
+              <TransliteratedInput value={local.specialties} onChange={(v) => updateField("specialties", v)} className={inputClass} placeholder="e.g. General Physician" />
             </div>
             <div>
               <label className={labelClass}>Registration Number</label>
-              <input type="text" className={inputClass} value={local.regNumber} onChange={(e) => updateField("regNumber", e.target.value)} />
+              <TransliteratedInput value={local.regNumber} onChange={(v) => updateField("regNumber", v)} className={inputClass} placeholder="e.g. MMC/2002/2451" />
             </div>
             <div>
-              <label className={labelClass}>Clinic Hours</label>
-              <input type="text" className={inputClass} value={local.clinicHours || ""} onChange={(e) => updateField("clinicHours", e.target.value)} />
+              <label className={labelClass}>Clinic Hours / वेळ</label>
+              <TransliteratedInput value={local.clinicHours || ""} onChange={(v) => updateField("clinicHours", v)} className={inputClass} placeholder="e.g. Morning 9–1 | Evening 5–9" />
             </div>
             <div>
-              <label className={labelClass}>Hospital Address</label>
-              <textarea className={inputClass} rows={2} value={local.address} onChange={(e) => updateField("address", e.target.value)} />
+              <label className={labelClass}>Hospital Address / पत्ता</label>
+              <TransliteratedTextArea rows={2} value={local.address} onChange={(v) => updateField("address", v)} className={inputClass} placeholder="e.g. Motala, Dist. Buldhana" />
             </div>
             <div>
               <label className={labelClass}>Phone Number</label>
-              <input type="text" className={inputClass} value={local.phone} onChange={(e) => updateField("phone", e.target.value)} />
+              <input type="tel" className={inputClass} value={local.phone} onChange={(e) => updateField("phone", e.target.value)} placeholder="e.g. 7757003800" />
             </div>
           </div>
         </div>
@@ -481,6 +488,7 @@ export default function DoctorProfilePanel({ isDark = true, onSaved }: { isDark?
                 key={i}
                 value={fac}
                 index={i}
+                isDark={isDark}
                 onChange={(idx, val) => {
                   const copy = [...local.facilities];
                   copy[idx] = val;

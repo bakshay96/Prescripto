@@ -2,6 +2,7 @@ import Head from "next/head";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useTheme } from "../components/ThemeContext";
+import RoleGuard from "../components/RoleGuard";
 import {
   getUser,
   getAdminAnalytics,
@@ -16,7 +17,7 @@ import {
   SupportQuery,
 } from "../utils/api";
 
-export default function AdminPage() {
+function AdminContent() {
   const router = useRouter();
   const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
@@ -32,10 +33,6 @@ export default function AdminPage() {
   const [actionMsg, setActionMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    const user = getUser();
-    if (!user || user.role !== "MASTER_ADMIN") {
-      // If not logged in as Master Admin, redirect or allow preview
-    }
     loadAdminData();
   }, []);
 
@@ -360,5 +357,13 @@ export default function AdminPage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <RoleGuard allowedRoles={["MASTER_ADMIN"]}>
+      <AdminContent />
+    </RoleGuard>
   );
 }

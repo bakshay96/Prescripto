@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { loginApi, registerHospitalApi, setToken, setUser, getUser } from "../utils/api";
+import { loginApi, registerHospitalApi, setToken, setUser, getUser, getMeApi } from "../utils/api";
 import BrandLoader from "../components/BrandLoader";
 import { useTheme } from "../components/ThemeContext";
+import { getDefaultRouteForRole } from "../components/RoleGuard";
 
 const DEMO_CREDENTIALS = [
   {
@@ -67,8 +68,7 @@ export default function LoginPage() {
   useEffect(() => {
     const user = getUser();
     if (user) {
-      if (user.role === "PHARMACIST") router.replace("/inventory");
-      else router.replace("/prescription");
+      router.replace(getDefaultRouteForRole(user.role));
     }
   }, [router]);
 
@@ -100,8 +100,7 @@ export default function LoginPage() {
       // Show brand loader briefly before redirect
       await new Promise(r => setTimeout(r, 1200));
 
-      if (res.role === "PHARMACIST") router.replace("/inventory");
-      else router.replace("/prescription");
+      router.replace(getDefaultRouteForRole(res.role));
     } catch (err: any) {
       setLoadingRole(null);
       setError(err.message || "Invalid email or password");
