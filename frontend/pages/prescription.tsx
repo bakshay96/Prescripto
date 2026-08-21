@@ -4,13 +4,13 @@ import { useTheme } from "../components/ThemeContext";
 import PrescriptionWriter from "../components/PrescriptionWriter";
 import { INITIAL_MEDICINES, MedicineItem } from "../components/InventoryDashboard";
 import { listMedicines, Medicine } from "../utils/api";
+import RoleGuard from "../components/RoleGuard";
 
-export default function PrescriptionPage() {
+function PrescriptionContent() {
   const { theme, lang } = useTheme();
   const [inventoryMeds, setInventoryMeds] = useState<MedicineItem[]>(INITIAL_MEDICINES);
 
   useEffect(() => {
-    // Load live medicines from backend for autocomplete in PrescriptionWriter
     listMedicines()
       .then((meds: Medicine[]) => {
         if (meds && meds.length > 0) {
@@ -28,11 +28,8 @@ export default function PrescriptionPage() {
           }));
           setInventoryMeds(mapped);
         }
-        // If API returns empty, keep INITIAL_MEDICINES as fallback
       })
-      .catch(() => {
-        // Keep INITIAL_MEDICINES fallback on API error
-      });
+      .catch(() => {});
   }, []);
 
   const LABELS: Record<string, Record<string, string>> = {
@@ -57,7 +54,7 @@ export default function PrescriptionPage() {
         fontFamily: "'Inter','Noto Sans Devanagari',Arial,sans-serif",
         transition: "background-color 0.3s, color 0.3s",
       }}>
-        <div style={{ maxWidth: 1080, margin: "0 auto", padding: "20px 16px 80px" }}>
+        <div style={{ width: "100%", maxWidth: "100%", padding: "16px 24px 80px" }}>
           <div style={{ marginBottom: 20 }}>
             <h1 style={{ fontSize: 22, fontWeight: 800, color: theme.text, margin: 0 }}>
               {LABELS.title[lang] ?? LABELS.title.en}
@@ -74,5 +71,13 @@ export default function PrescriptionPage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function PrescriptionPage() {
+  return (
+    <RoleGuard allowedRoles={["DOCTOR", "MASTER_ADMIN"]}>
+      <PrescriptionContent />
+    </RoleGuard>
   );
 }

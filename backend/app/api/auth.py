@@ -74,6 +74,9 @@ _DEMO_PASSWORDS = {
     # Legacy fallback emails (backward compat)
     "doctor@suyog.com":       "doctor123",
     "pharmacist@suyog.com":   "pharmacist123",
+    # CREDENTIALS.md demo accounts
+    "sarah.doc@livetest.com": "docpassword123",
+    "dave.pharma@livetest.com": "pharmapassword123",
 }
 
 _DEMO_ROLES = {
@@ -82,6 +85,8 @@ _DEMO_ROLES = {
     "admin@prescripto.com":   "MASTER_ADMIN",
     "doctor@suyog.com":       "DOCTOR",
     "pharmacist@suyog.com":   "PHARMACIST",
+    "sarah.doc@livetest.com": "DOCTOR",
+    "dave.pharma@livetest.com": "PHARMACIST",
 }
 
 _DEMO_NAMES = {
@@ -90,6 +95,8 @@ _DEMO_NAMES = {
     "admin@prescripto.com":   "System Admin",
     "doctor@suyog.com":       "Dr. Vikas Va. Karande",
     "pharmacist@suyog.com":   "Suyog Pharmacy Admin",
+    "sarah.doc@livetest.com": "Dr. Sarah Jenkins",
+    "dave.pharma@livetest.com": "Dave Miller (Pharmacist)",
 }
 
 _UID_MAP = {
@@ -98,6 +105,8 @@ _UID_MAP = {
     "admin@prescripto.com":   "u-admin-demo-001",
     "doctor@suyog.com":       "u-doctor-demo-001",
     "pharmacist@suyog.com":   "u-pharmacist-demo-001",
+    "sarah.doc@livetest.com": "u-doctor-demo-002",
+    "dave.pharma@livetest.com": "u-pharmacist-demo-002",
 }
 
 _DEFAULT_CLINIC_ID = "c1111111-1111-1111-1111-111111111111"

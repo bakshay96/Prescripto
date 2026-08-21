@@ -1,8 +1,10 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { TypingLang } from "../utils/transliteration";
 
-export type ThemeId = "dark" | "light" | "indigo" | "forest" | "sunset";
+export type ThemeId = "dark" | "light" | "govblue" | "highcontrast" | "indigo" | "forest" | "sunset";
 export type Lang = "mr" | "en" | "hi";
+export type FontSizeScale = 0.9 | 1.0 | 1.15; // A-, A, A+
 
 export interface ThemeTokens {
   id: ThemeId;
@@ -19,6 +21,8 @@ export interface ThemeTokens {
   inputBg: string;
   inputBorder: string;
   inputText: string;
+  badgeBg?: string;
+  badgeText?: string;
 }
 
 export const THEMES: Record<ThemeId, ThemeTokens> = {
@@ -35,6 +39,21 @@ export const THEMES: Record<ThemeId, ThemeTokens> = {
     border: "#e2e8f0", text: "#0f172a", textMuted: "#475569",
     accent: "#c41e3a", accentText: "#fff",
     inputBg: "#ffffff", inputBorder: "#cbd5e1", inputText: "#0f172a",
+  },
+  govblue: {
+    id: "govblue", label: "UX4G Gov", emoji: "🏛️",
+    bg: "#0b192c", surface: "#1e3e62", card: "#1e3e62",
+    border: "#005691", text: "#ffffff", textMuted: "#90caf9",
+    accent: "#ff671f", accentText: "#fff",
+    inputBg: "#0b192c", inputBorder: "#005691", inputText: "#ffffff",
+    badgeBg: "#046a38", badgeText: "#ffffff",
+  },
+  highcontrast: {
+    id: "highcontrast", label: "High Contrast", emoji: "👁️",
+    bg: "#000000", surface: "#111111", card: "#111111",
+    border: "#ffff00", text: "#ffff00", textMuted: "#00ffff",
+    accent: "#ffff00", accentText: "#000",
+    inputBg: "#000000", inputBorder: "#ffff00", inputText: "#ffff00",
   },
   indigo: {
     id: "indigo", label: "Indigo", emoji: "🔵",
@@ -65,6 +84,10 @@ interface ThemeContextValue {
   setTheme: (id: ThemeId) => void;
   lang: Lang;
   setLang: (l: Lang) => void;
+  typingLang: TypingLang;
+  setTypingLang: (tl: TypingLang) => void;
+  fontSizeScale: FontSizeScale;
+  setFontSizeScale: (fs: FontSizeScale) => void;
   prescriptionColor: string;
   setPrescriptionColor: (c: string) => void;
 }
@@ -75,6 +98,10 @@ const ThemeContext = createContext<ThemeContextValue>({
   setTheme: () => {},
   lang: "mr",
   setLang: () => {},
+  typingLang: "E",
+  setTypingLang: () => {},
+  fontSizeScale: 1.0,
+  setFontSizeScale: () => {},
   prescriptionColor: "#1a237e",
   setPrescriptionColor: () => {},
 });
@@ -82,14 +109,24 @@ const ThemeContext = createContext<ThemeContextValue>({
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [themeId, setThemeId] = useState<ThemeId>("dark");
   const [lang, setLangState] = useState<Lang>("mr");
+  const [typingLang, setTypingLangState] = useState<TypingLang>("E");
+  const [fontSizeScale, setFontSizeScaleState] = useState<FontSizeScale>(1.0);
   const [prescriptionColor, setPrescriptionColorState] = useState("#1a237e");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const saved = localStorage.getItem("prescripto_theme_v4") as ThemeId | null;
     if (saved && THEMES[saved]) setThemeId(saved);
+
     const savedLang = localStorage.getItem("prescripto_lang") as Lang | null;
     if (savedLang) setLangState(savedLang);
+
+    const savedTyping = localStorage.getItem("prescripto_typing_lang") as TypingLang | null;
+    if (savedTyping) setTypingLangState(savedTyping);
+
+    const savedFont = localStorage.getItem("prescripto_font_scale");
+    if (savedFont) setFontSizeScaleState(parseFloat(savedFont) as FontSizeScale);
+
     const savedColor = localStorage.getItem("prescripto_rx_color");
     if (savedColor) setPrescriptionColorState(savedColor);
   }, []);
@@ -104,6 +141,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== "undefined") localStorage.setItem("prescripto_lang", l);
   }, []);
 
+  const setTypingLang = useCallback((tl: TypingLang) => {
+    setTypingLangState(tl);
+    if (typeof window !== "undefined") localStorage.setItem("prescripto_typing_lang", tl);
+  }, []);
+
+  const setFontSizeScale = useCallback((fs: FontSizeScale) => {
+    setFontSizeScaleState(fs);
+    if (typeof window !== "undefined") localStorage.setItem("prescripto_font_scale", fs.toString());
+  }, []);
+
   const setPrescriptionColor = useCallback((c: string) => {
     setPrescriptionColorState(c);
     if (typeof window !== "undefined") localStorage.setItem("prescripto_rx_color", c);
@@ -116,6 +163,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       setTheme,
       lang,
       setLang,
+      typingLang,
+      setTypingLang,
+      fontSizeScale,
+      setFontSizeScale,
       prescriptionColor,
       setPrescriptionColor,
     }}>

@@ -3,6 +3,7 @@ import Head from "next/head";
 import { useEffect } from "react";
 import { ThemeProvider, useTheme, THEMES } from "../components/ThemeContext";
 import UtilityBar from "../components/UtilityBar";
+import { GlobalTransliterationFAB } from "../components/GlobalTransliterationFAB";
 import "../style.css";
 
 /**
@@ -53,6 +54,8 @@ export default function App({ Component, pageProps }: AppProps) {
       {/* Global always-visible utility bar */}
       <UtilityBar />
       <Component {...pageProps} />
+      {/* Global Transliteration FAB — visible on every page */}
+      <GlobalTransliterationFAB />
     </ThemeProvider>
   );
 }

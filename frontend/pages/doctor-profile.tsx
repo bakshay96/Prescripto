@@ -1,8 +1,9 @@
 import Head from "next/head";
 import { useTheme } from "../components/ThemeContext";
 import DoctorProfilePanel from "../components/DoctorProfilePanel";
+import RoleGuard from "../components/RoleGuard";
 
-export default function DoctorProfilePage() {
+function DoctorProfileContent() {
   const { theme, lang } = useTheme();
   const isDark = theme.id !== "light";
 
@@ -43,5 +44,13 @@ export default function DoctorProfilePage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function DoctorProfilePage() {
+  return (
+    <RoleGuard allowedRoles={["DOCTOR", "MASTER_ADMIN"]}>
+      <DoctorProfileContent />
+    </RoleGuard>
   );
 }
