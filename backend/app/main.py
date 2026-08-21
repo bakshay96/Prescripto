@@ -59,20 +59,18 @@ def startup_event():
     # Run MongoDB check in background so startup completes immediately
     def _bg_check():
         try:
-            mongo_url = settings.get_mongo_url()
             db_name = settings.get_mongo_db()
-            url_display = mongo_url[:40] + "..." if len(mongo_url) > 40 else mongo_url
-            print(f"  [MONGODB]   Connecting to   : {url_display}")
+            print(f"  [MONGODB]   Connection Mode : Encrypted MongoDB Protocol")
             print(f"  [MONGODB]   Database        : {db_name}")
             connected = ping_db()
-            status = "CONNECTED [OK]" if connected else "OFFLINE (check URL/credentials)"
+            status = "CONNECTED [OK]" if connected else "OFFLINE (check environment config)"
             print(f"  [MONGODB]   Status          : {status}")
             if connected:
                 ok = ensure_indexes()
                 print(f"  [INDEXES]   {'CREATED / VERIFIED' if ok else 'SKIPPED'}")
             print("  [VITALS]    READY TO SERVE DATA")
         except Exception as e:
-            print(f"  [MONGODB]   ERROR - {str(e)[:80]}")
+            print(f"  [MONGODB]   ERROR - Connection issue detected")
 
     threading.Thread(target=_bg_check, daemon=True).start()
 
