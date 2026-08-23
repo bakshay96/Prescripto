@@ -1,422 +1,1477 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prescripto - Doctor Prescription & Pharmacy Management System</title>
-  
-  <!-- Google Fonts & FontAwesome -->
+  <meta name="description" content="Prescripto - Complete Doctor Prescription & Pharmacy Management SaaS for hospitals. Register your hospital, manage prescriptions, medicines, patients, and more.">
+  <title>Prescripto — Hospital Management Platform</title>
+
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- FontAwesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  
+  <!-- App CSS -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app-container">
-    
-    <!-- Header & Clinic Branding -->
-    <header class="app-header glass-card">
-      <div class="header-left">
-        <div class="logo-icon">
-          <i class="fa-solid fa-staff-snake"></i>
-        </div>
-        <div class="brand-info">
-          <h1>Prescripto</h1>
-          <p class="subtitle">Doctor Prescription & Pharmacy Inventory System</p>
-        </div>
-      </div>
-      
-      <div class="header-clinic-info glass-pill" id="clinicInfoDisplay">
-        <i class="fa-solid fa-hospital-user"></i>
-        <div>
-          <span class="clinic-name" id="clinicName">City Care Hospital & Medical Store</span>
-          <span class="clinic-sub" id="clinicAddress">108 Health Avenue • Reg: CL-2026-9081</span>
-        </div>
-      </div>
 
-      <div class="header-right">
-        <div class="role-selector">
-          <button class="role-btn active" id="roleDoctorBtn" onclick="switchRole('DOCTOR')">
-            <i class="fa-solid fa-user-doctor"></i> Doctor View
-          </button>
-          <button class="role-btn" id="rolePharmacistBtn" onclick="switchRole('PHARMACIST')">
-            <i class="fa-solid fa-pills"></i> Pharmacist View
-          </button>
-        </div>
-        
-        <button class="role-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Light / Dark Mode">
-          <i class="fa-solid fa-moon" id="themeIcon"></i>
+<!-- Animated Background -->
+<div class="animated-bg">
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<!-- Mobile Menu (Landing) -->
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-menu-close" onclick="closeMobileMenu()"><i class="fa-solid fa-xmark"></i></button>
+  <a href="javascript:void(0)" onclick="closeMobileMenu(); smoothScrollTo('features')">Features</a>
+  <a href="javascript:void(0)" onclick="closeMobileMenu(); smoothScrollTo('roles')">Who it's for</a>
+  <a href="javascript:void(0)" onclick="closeMobileMenu(); smoothScrollTo('pricing')">Pricing</a>
+  <button class="btn btn-secondary" onclick="closeMobileMenu(); navigate('login')">Login</button>
+  <button class="btn btn-primary" onclick="closeMobileMenu(); navigate('register')">Register Free</button>
+</div>
+
+<!-- Sidebar Overlay (Dashboard) -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- =====================================================
+     APP ROOT — Views rendered by JavaScript Router
+     ===================================================== -->
+<div class="app-root" id="appRoot">
+
+  <!-- ════════════════════════════════════════════════════
+       VIEW: LANDING PAGE
+       ════════════════════════════════════════════════════ -->
+  <div class="view landing-page" id="view-landing">
+
+    <!-- Nav -->
+    <nav class="landing-nav">
+      <div class="nav-brand">
+        <div class="brand-icon"><i class="fa-solid fa-staff-snake"></i></div>
+        Prescripto
+      </div>
+      <div class="nav-links">
+        <a href="javascript:void(0)" onclick="smoothScrollTo('features')">Features</a>
+        <a href="javascript:void(0)" onclick="smoothScrollTo('roles')">Solutions</a>
+        <a href="javascript:void(0)" onclick="smoothScrollTo('pricing')">Pricing</a>
+      </div>
+      <div class="nav-actions">
+        <button class="btn btn-ghost btn-sm" onclick="navigate('login')">Login</button>
+        <button class="btn btn-primary btn-sm" onclick="navigate('register')">Get Started Free</button>
+        <button class="hamburger" onclick="openMobileMenu()">
+          <span></span><span></span><span></span>
         </button>
-        
-        <div class="api-status-badge online" id="apiStatusBadge">
-          <span class="status-dot"></span> Backend API Connected
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero-section">
+      <div class="hero-content">
+        <div class="hero-badge"><span class="dot"></span> Trusted by 500+ Clinics Across India</div>
+        <h1 class="hero-title">
+          Your Complete<br>
+          <span class="gradient-text">Hospital Management</span><br>
+          Platform
+        </h1>
+        <p class="hero-subtitle">
+          Register your hospital, write digital prescriptions in English, मराठी & हिंदी, manage medicine inventory, track patients, and more — all in one beautiful platform.
+        </p>
+        <div class="hero-actions">
+          <button class="btn btn-primary btn-lg" onclick="navigate('register')">
+            <i class="fa-solid fa-hospital"></i> Register Your Hospital Free
+          </button>
+          <button class="btn btn-secondary btn-lg" onclick="navigate('login')">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i> Login to Dashboard
+          </button>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat"><div class="stat-value">500+</div><div class="stat-label">Hospitals</div></div>
+          <div class="hero-stat"><div class="stat-value">50K+</div><div class="stat-label">Prescriptions</div></div>
+          <div class="hero-stat"><div class="stat-value">3</div><div class="stat-label">Languages</div></div>
+          <div class="hero-stat"><div class="stat-value">99.9%</div><div class="stat-label">Uptime</div></div>
         </div>
       </div>
-    </header>
+    </section>
 
-    <!-- Main Content Area -->
-    <main class="main-content">
-      
-      <!-- DOCTOR DASHBOARD -->
-      <section id="doctorDashboard" class="dashboard-section active">
-        <div class="dashboard-grid">
-          
-          <!-- Patient Registration & List Card -->
-          <div class="glass-card">
-            <div class="card-header">
-              <h2><i class="fa-solid fa-user-plus"></i> Patient Management</h2>
-              <span class="badge badge-teal">Calculates Age Dynamically</span>
+    <!-- Features -->
+    <section class="features-section" id="features">
+      <div class="section-header">
+        <div class="section-tag">Powerful Features</div>
+        <h2 class="section-title">Everything your clinic needs</h2>
+        <p class="section-subtitle">From patient registration to stock management — Prescripto handles it all.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon icon-teal"><i class="fa-solid fa-user-doctor"></i></div>
+          <div class="feature-title">Doctor Dashboard</div>
+          <div class="feature-desc">Write digital prescriptions with dosage, frequency & duration. View patient history and manage your clinic's complete workflow.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon icon-blue"><i class="fa-solid fa-pills"></i></div>
+          <div class="feature-title">Medicine Inventory</div>
+          <div class="feature-desc">Real-time stock tracking, expiry red flags, restock alerts, and atomic stock deduction during prescription dispensing.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon icon-purple"><i class="fa-solid fa-language"></i></div>
+          <div class="feature-title">3-Language Support</div>
+          <div class="feature-desc">Full English, मराठी and हिंदी support across all screens. Print prescriptions in patient's preferred language.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon icon-amber"><i class="fa-solid fa-clock-rotate-left"></i></div>
+          <div class="feature-title">Patient History</div>
+          <div class="feature-desc">Complete chronological visit timeline with diagnoses, prescriptions, and treatment records for every patient.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon icon-red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          <div class="feature-title">Expiry Red Flags</div>
+          <div class="feature-desc">Automatic visual alerts for expired and near-expiry medicines. Pulsing red badges highlight critical inventory issues.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon icon-indigo"><i class="fa-solid fa-print"></i></div>
+          <div class="feature-title">Professional Print</div>
+          <div class="feature-desc">Generate and print professional medical prescriptions with hospital branding, doctor signature space, and bilingual text.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Roles Section -->
+    <section class="roles-section" id="roles">
+      <div class="section-header" style="margin-bottom: var(--space-12);">
+        <div class="section-tag">Who is Prescripto for?</div>
+        <h2 class="section-title">A role for everyone</h2>
+        <p class="section-subtitle">Custom dashboards designed for every member of your hospital team.</p>
+      </div>
+      <div class="roles-grid">
+        <div class="role-card" onclick="navigate('register')">
+          <span class="role-emoji">👨‍⚕️</span>
+          <h3>Doctors</h3>
+          <p>Register your hospital, write prescriptions, manage patients, assign pharmacists, and run your clinic digitally.</p>
+          <button class="btn btn-primary w-full">Start as Doctor</button>
+        </div>
+        <div class="role-card" onclick="navigate('login')">
+          <span class="role-emoji">💊</span>
+          <h3>Pharmacists</h3>
+          <p>Manage medicine inventory, process prescriptions, restock supplies, and track stock ledger in real-time.</p>
+          <button class="btn btn-outline w-full">Login as Pharmacist</button>
+        </div>
+        <div class="role-card" onclick="navigate('login')">
+          <span class="role-emoji">🔑</span>
+          <h3>Master Admin</h3>
+          <p>Monitor all registered hospitals, manage subscriptions, respond to support queries, and view platform analytics.</p>
+          <button class="btn btn-secondary w-full">Admin Portal</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section" id="pricing">
+      <div class="cta-box">
+        <h2>Ready to go digital?</h2>
+        <p>Join 500+ clinics already using Prescripto to manage their hospital workflows efficiently.</p>
+        <button class="btn btn-primary btn-lg" onclick="navigate('register')">
+          <i class="fa-solid fa-hospital"></i> Register Your Hospital — Free Forever
+        </button>
+      </div>
+    </section>
+
+    <footer class="landing-footer">
+      © 2026 Prescripto. Built with ❤️ for Indian Healthcare.
+      &nbsp;|&nbsp; <a href="#" style="color: var(--brand-primary);">Terms</a>
+      &nbsp;|&nbsp; <a href="#" style="color: var(--brand-primary);">Privacy</a>
+    </footer>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════
+       VIEW: REGISTER
+       ════════════════════════════════════════════════════ -->
+  <div class="view auth-page" id="view-register">
+    <div class="auth-container">
+      <div class="auth-header">
+        <div class="auth-logo"><i class="fa-solid fa-staff-snake"></i></div>
+        <div class="auth-title">Register Your Hospital</div>
+        <div class="auth-subtitle">Create your Prescripto account — free forever</div>
+      </div>
+      <div class="auth-card">
+        <form id="registerForm" onsubmit="handleRegister(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Doctor's Full Name <span class="required">*</span></label>
+              <div class="input-with-icon">
+                <i class="fa-solid fa-user input-icon"></i>
+                <input class="form-control" id="regName" type="text" placeholder="Dr. Rajesh Sharma" required>
+              </div>
             </div>
-            
-            <form id="patientForm" onsubmit="handleCreatePatient(event)">
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="pName">Patient Name *</label>
-                  <input type="text" id="pName" placeholder="e.g. Rajesh Kumar" required>
+            <div class="form-group">
+              <label class="form-label">License Number</label>
+              <div class="input-with-icon">
+                <i class="fa-solid fa-id-card input-icon"></i>
+                <input class="form-control" id="regLicense" type="text" placeholder="MH-2026-12345">
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Hospital / Clinic Name <span class="required">*</span></label>
+            <div class="input-with-icon">
+              <i class="fa-solid fa-hospital input-icon"></i>
+              <input class="form-control" id="regClinicName" type="text" placeholder="City Care Hospital & Medical Store" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Clinic Address</label>
+            <div class="input-with-icon">
+              <i class="fa-solid fa-location-dot input-icon"></i>
+              <input class="form-control" id="regClinicAddress" type="text" placeholder="108 Health Avenue, Pune, Maharashtra">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address <span class="required">*</span></label>
+            <div class="input-with-icon">
+              <i class="fa-solid fa-envelope input-icon"></i>
+              <input class="form-control" id="regEmail" type="email" placeholder="doctor@hospital.com" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Password <span class="required">*</span></label>
+              <div class="input-with-icon">
+                <i class="fa-solid fa-lock input-icon"></i>
+                <input class="form-control" id="regPassword" type="password" placeholder="Create password" required minlength="8">
+                <i class="fa-solid fa-eye input-icon-right" onclick="togglePassword('regPassword')"></i>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone Number</label>
+              <div class="input-with-icon">
+                <i class="fa-solid fa-phone input-icon"></i>
+                <input class="form-control" id="regPhone" type="tel" placeholder="+91 98765 43210">
+              </div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary w-full" id="registerBtn" style="margin-top: var(--space-2);">
+            <i class="fa-solid fa-hospital"></i> Register Hospital & Get Access
+          </button>
+        </form>
+        <div class="auth-footer-link">
+          Already have an account? <a onclick="navigate('login')">Login here</a>
+        </div>
+        <div class="auth-footer-link" style="margin-top: var(--space-2);">
+          <a onclick="navigate('landing')" style="color: var(--text-muted); font-weight: 400;">← Back to home</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════
+       VIEW: LOGIN
+       ════════════════════════════════════════════════════ -->
+  <div class="view auth-page" id="view-login">
+    <div class="auth-container">
+      <div class="auth-header">
+        <div class="auth-logo"><i class="fa-solid fa-staff-snake"></i></div>
+        <div class="auth-title">Welcome Back</div>
+        <div class="auth-subtitle">Sign in to your Prescripto dashboard</div>
+      </div>
+      <div class="auth-card">
+        <!-- Role Selector -->
+        <div class="role-selector-auth" id="loginRoleSelector">
+          <button class="role-opt active" data-role="DOCTOR" onclick="selectLoginRole(this, 'DOCTOR')">
+            <span class="role-icon">👨‍⚕️</span> Doctor
+          </button>
+          <button class="role-opt" data-role="PHARMACIST" onclick="selectLoginRole(this, 'PHARMACIST')">
+            <span class="role-icon">💊</span> Pharmacist
+          </button>
+          <button class="role-opt" data-role="MASTER_ADMIN" onclick="selectLoginRole(this, 'MASTER_ADMIN')">
+            <span class="role-icon">🔑</span> Admin
+          </button>
+        </div>
+
+        <form id="loginForm" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <div class="input-with-icon">
+              <i class="fa-solid fa-envelope input-icon"></i>
+              <input class="form-control" id="loginEmail" type="email" placeholder="your@email.com" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <div class="input-with-icon">
+              <i class="fa-solid fa-lock input-icon"></i>
+              <input class="form-control" id="loginPassword" type="password" placeholder="Enter your password" required>
+              <i class="fa-solid fa-eye input-icon-right" onclick="togglePassword('loginPassword')"></i>
+            </div>
+          </div>
+          <div id="loginError" class="form-error" style="display:none; margin-bottom: var(--space-3);"></div>
+          <button type="submit" class="btn btn-primary w-full" id="loginBtn">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i> <span id="loginBtnText">Sign In</span>
+          </button>
+        </form>
+
+        <!-- Demo Quick Login -->
+        <div style="margin-top: var(--space-5);">
+          <p class="text-xs text-muted text-center" style="margin-bottom: var(--space-3);">— Quick Demo Login —</p>
+          <div class="flex gap-2" style="flex-wrap: wrap;">
+            <button class="btn btn-secondary btn-sm flex-1" onclick="quickLogin('doctor')">👨‍⚕️ Doctor Demo</button>
+            <button class="btn btn-secondary btn-sm flex-1" onclick="quickLogin('pharmacist')">💊 Pharmacist Demo</button>
+            <button class="btn btn-secondary btn-sm flex-1" onclick="quickLogin('admin')">🔑 Admin Demo</button>
+          </div>
+        </div>
+
+        <div class="auth-footer-link" style="margin-top: var(--space-5);">
+          Don't have an account? <a onclick="navigate('register')">Register your hospital</a>
+        </div>
+        <div class="auth-footer-link" style="margin-top: var(--space-2);">
+          <a onclick="navigate('landing')" style="color: var(--text-muted); font-weight: 400;">← Back to home</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════
+       VIEW: DOCTOR DASHBOARD
+       ════════════════════════════════════════════════════ -->
+  <div class="view" id="view-doctor">
+    <div class="dashboard-shell">
+      <!-- Sidebar -->
+      <aside class="sidebar" id="doctorSidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-brand">
+            <div class="s-icon"><i class="fa-solid fa-staff-snake"></i></div>
+            Prescripto
+          </div>
+          <button class="sidebar-close" onclick="closeSidebar()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar" id="drAvatar">DR</div>
+          <div class="sidebar-user-name" id="drName">Dr. Rajesh Sharma</div>
+          <div class="sidebar-user-role">Doctor</div>
+          <div class="sidebar-clinic" id="drClinic">City Care Hospital</div>
+        </div>
+        <nav class="sidebar-nav">
+          <div class="sidebar-section">
+            <div class="sidebar-section-label">Main</div>
+            <button class="nav-item active" id="nav-dr-overview" onclick="showDrPanel('overview')">
+              <span class="nav-icon"><i class="fa-solid fa-gauge"></i></span> Overview
+            </button>
+            <button class="nav-item" id="nav-dr-patients" onclick="showDrPanel('patients')">
+              <span class="nav-icon"><i class="fa-solid fa-users"></i></span> Patients
+            </button>
+            <button class="nav-item" id="nav-dr-prescribe" onclick="showDrPanel('prescribe')">
+              <span class="nav-icon"><i class="fa-solid fa-prescription"></i></span> New Prescription
+            </button>
+            <button class="nav-item" id="nav-dr-history" onclick="showDrPanel('history')">
+              <span class="nav-icon"><i class="fa-solid fa-clock-rotate-left"></i></span> Prescription History
+            </button>
+          </div>
+          <div class="sidebar-section">
+            <div class="sidebar-section-label">Management</div>
+            <button class="nav-item" id="nav-dr-store" onclick="showDrPanel('store')">
+              <span class="nav-icon"><i class="fa-solid fa-store"></i></span> Assign Store Admins
+            </button>
+            <button class="nav-item" id="nav-dr-patients-hist" onclick="showDrPanel('patient-history')">
+              <span class="nav-icon"><i class="fa-solid fa-timeline"></i></span> Patient History
+            </button>
+          </div>
+          <div class="sidebar-section">
+            <div class="sidebar-section-label">Account</div>
+            <button class="nav-item" onclick="openSupportQuery()">
+              <span class="nav-icon"><i class="fa-solid fa-circle-question"></i></span> Support
+            </button>
+            <button class="nav-item" onclick="confirmLogout()">
+              <span class="nav-icon"><i class="fa-solid fa-arrow-right-from-bracket"></i></span> Logout
+            </button>
+          </div>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="lang-selector-sidebar">
+            <button class="lang-btn-s active" id="sbl-en" onclick="setLang('en')">EN</button>
+            <button class="lang-btn-s" id="sbl-mr" onclick="setLang('mr')">मरा</button>
+            <button class="lang-btn-s" id="sbl-hi" onclick="setLang('hi')">हिं</button>
+          </div>
+          <button class="btn btn-secondary btn-sm w-full" onclick="toggleTheme()">
+            <i class="fa-solid fa-circle-half-stroke"></i> Toggle Theme
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main -->
+      <main class="dashboard-main">
+        <header class="dashboard-topbar">
+          <div class="topbar-left">
+            <button class="menu-toggle" onclick="openSidebar('doctorSidebar')">
+              <span></span><span></span><span></span>
+            </button>
+            <div class="page-title" id="drPageTitle">Overview</div>
+          </div>
+          <div class="topbar-right">
+            <span class="badge badge-teal" id="apiStatusBadge"><i class="fa-solid fa-circle" style="font-size:8px;"></i> Connected</span>
+            <button class="btn btn-primary btn-sm" onclick="showDrPanel('prescribe')">
+              <i class="fa-solid fa-plus"></i> New Rx
+            </button>
+          </div>
+        </header>
+
+        <div class="dashboard-content">
+
+
+          <!-- ── Dr Panel: My Profile ── -->
+          <div id="dr-panel-profile" style="display:none;" class="animate-fade-up">
+
+            <!-- Profile Header Card -->
+            <div class="profile-header-card">
+              <div class="flex items-center gap-4" style="flex-wrap:wrap;">
+                <div class="profile-avatar-large" id="profileAvatarDisplay">DR</div>
+                <div style="flex:1;">
+                  <div style="font-size:22px; font-weight:800;" id="profileDisplayName">Dr. Rajesh Sharma</div>
+                  <div style="font-size:14px; color:var(--text-secondary);" id="profileDisplayQual">M.B.B.S.</div>
+                  <div class="profile-badge"><i class="fa-solid fa-hospital"></i> <span id="profileDisplayClinic">City Care Hospital</span></div>
                 </div>
-                <div class="form-group">
-                  <label for="pVillage">Village / Location *</label>
-                  <input type="text" id="pVillage" placeholder="e.g. Rampur Village, Dist 4" required>
+                <button class="btn btn-primary" onclick="saveDoctorProfile()">
+                  <i class="fa-solid fa-floppy-disk"></i> Save Profile
+                </button>
+              </div>
+              <!-- Prescription preview strip -->
+              <div class="rx-preview-box" style="margin-top:16px;">
+                <div style="display:flex;justify-content:space-between;">
+                  <div style="font-size:16px;font-weight:900;color:#dc2626;" id="prevHospName">Hospital Name</div>
+                  <div style="text-align:right;font-size:11px;">
+                    <div style="font-weight:800;" id="prevDocName">Dr. Name</div>
+                    <div style="color:#64748b;" id="prevDocQual">M.B.B.S.</div>
+                  </div>
                 </div>
               </div>
+            </div>
 
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="pDob">Date of Birth *</label>
-                  <input type="date" id="pDob" onchange="calculateLiveAge()" required>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);">
+              <!-- Left: Basic Info -->
+              <div class="section-card" style="padding:var(--space-5);">
+                <div class="section-card-title" style="margin-bottom:var(--space-4);">
+                  <div class="title-icon icon-teal"><i class="fa-solid fa-hospital"></i></div>
+                  Hospital & Doctor Details
                 </div>
                 <div class="form-group">
-                  <label for="pGender">Gender</label>
-                  <select id="pGender">
+                  <label class="form-label">Hospital / Clinic Name <span class="required">*</span></label>
+                  <input class="form-control" id="profHospitalName" type="text" placeholder="e.g. Suyog Hospital / सुयोग हॉस्पिटल" oninput="liveProfilePreview()">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Doctor Full Name <span class="required">*</span></label>
+                  <input class="form-control" id="profDoctorName" type="text" placeholder="e.g. Dr. Vikas V. Karande" oninput="liveProfilePreview()">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Qualifications</label>
+                  <input class="form-control" id="profQualifications" type="text" placeholder="e.g. M.B.B.S. (MUHS NASIK), MS Surgery" oninput="liveProfilePreview()">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Registration Number</label>
+                  <input class="form-control" id="profRegNo" type="text" placeholder="e.g. Reg. No. 98203ML2411">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Specialties (comma separated)</label>
+                  <input class="form-control" id="profSpecialties" type="text" placeholder="e.g. General Physician & Surgeon, Orthopaedics">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Clinic Hours</label>
+                  <input class="form-control" id="profClinicHours" type="text" placeholder="e.g. सकाळी ९ ते सायं. ६">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Hospital Address</label>
+                  <textarea class="form-control" id="profAddress" rows="2" placeholder="Full address for prescription footer"></textarea>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Phone / Mobile</label>
+                  <input class="form-control" id="profPhone" type="text" placeholder="e.g. मोबा. नं. 7757003800">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">UHID Prefix</label>
+                  <input class="form-control" id="profUhidPrefix" type="text" placeholder="e.g. U.H.I.D." value="U.H.I.D.">
+                </div>
+              </div>
+              <!-- Right: Facilities List -->
+              <div class="section-card" style="padding:var(--space-5);">
+                <div class="section-card-title" style="margin-bottom:var(--space-4);">
+                  <div class="title-icon" style="background:rgba(220,38,38,0.12);"><i class="fa-solid fa-list-check" style="color:#ef4444;"></i></div>
+                  उपलब्ध सुविधा (Available Facilities)
+                </div>
+                <p class="text-xs text-muted" style="margin-bottom:var(--space-3);">These appear on the left sidebar of printed prescriptions</p>
+                <div class="facilities-list-editor" id="facilitiesListEditor"></div>
+                <button type="button" class="btn btn-secondary btn-sm" style="margin-top:var(--space-3);" onclick="addFacilityItem()">
+                  <i class="fa-solid fa-plus"></i> Add Facility
+                </button>
+                <div class="form-group" style="margin-top:var(--space-4);">
+                  <label class="form-label">Prescription Language Default</label>
+                  <select class="form-control" id="profDefaultLang">
+                    <option value="en">English</option>
+                    <option value="mr" selected>Marathi (मराठी)</option>
+                    <option value="hi">Hindi (हिंदी)</option>
+                  </select>
+                </div>
+                <!-- Sample Prescription Preview -->
+                <div style="margin-top:var(--space-4); padding:var(--space-4); background:rgba(220,38,38,0.05); border:1px solid rgba(220,38,38,0.2); border-radius:var(--radius-md);">
+                  <div style="font-size:12px; font-weight:700; color:#ef4444; margin-bottom:var(--space-2);">
+                    <i class="fa-solid fa-eye"></i> Prescription Header Preview
+                  </div>
+                  <div style="background:white;color:#1a1a2e;padding:10px;border-radius:6px;font-size:11px;">
+                    <div style="background:#dc2626;color:white;padding:8px 12px;border-radius:4px;display:flex;justify-content:space-between;align-items:start;margin-bottom:4px;">
+                      <div style="font-size:14px;font-weight:900;" id="prevHospName2">Hospital Name</div>
+                      <div style="text-align:right;">
+                        <div style="font-weight:800;" id="prevDocName2">Dr. Name</div>
+                        <div style="font-size:9px;opacity:0.8;" id="prevDocQual2">Qualifications</div>
+                      </div>
+                    </div>
+                    <div style="color:#dc2626;font-size:9px;">Facilities sidebar | Rx table | Address footer</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Dr Panel: Overview ── -->
+          <div id="dr-panel-overview" style="display:none;" class="animate-fade-up">
+
+            <div class="metrics-grid">
+              <div class="metric-card" style="--metric-bg: rgba(16,185,129,0.12); --metric-color-text: #10b981;">
+                <div class="metric-icon"><i class="fa-solid fa-users"></i></div>
+                <div class="metric-value" id="mTotalPatients">0</div>
+                <div class="metric-label" id="lbl-total-patients">Total Patients</div>
+              </div>
+              <div class="metric-card" style="--metric-bg: rgba(14,165,233,0.12); --metric-color-text: #0ea5e9;">
+                <div class="metric-icon"><i class="fa-solid fa-prescription"></i></div>
+                <div class="metric-value" id="mTotalRx">0</div>
+                <div class="metric-label" id="lbl-total-rx">Prescriptions Written</div>
+              </div>
+              <div class="metric-card" style="--metric-bg: rgba(245,158,11,0.12); --metric-color-text: #f59e0b;">
+                <div class="metric-icon"><i class="fa-solid fa-clock"></i></div>
+                <div class="metric-value" id="mPendingRx">0</div>
+                <div class="metric-label" id="lbl-pending-rx">Pending Dispense</div>
+              </div>
+              <div class="metric-card" style="--metric-bg: rgba(139,92,246,0.12); --metric-color-text: #8b5cf6;">
+                <div class="metric-icon"><i class="fa-solid fa-calendar-day"></i></div>
+                <div class="metric-value" id="mTodayRx">0</div>
+                <div class="metric-label" id="lbl-today-rx">Today's Prescriptions</div>
+              </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="section-card">
+              <div class="section-card-header">
+                <div class="section-card-title">
+                  <div class="title-icon icon-teal"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                  <span id="lbl-recent-rx">Recent Prescriptions</span>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="showDrPanel('history')"><span id="lbl-view-all">View All</span></button>
+              </div>
+              <div class="table-container">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th id="th-rx-num">Rx #</th>
+                      <th id="th-rx-patient">Patient</th>
+                      <th id="th-rx-diag">Diagnosis</th>
+                      <th id="th-rx-status">Status</th>
+                      <th id="th-rx-date">Date</th>
+                      <th id="th-rx-action">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recentRxTableBody">
+                    <tr><td colspan="6" class="text-center text-muted" style="padding: 40px;">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Dr Panel: Patients ── -->
+          <div id="dr-panel-patients" style="display:none;">
+            <div class="section-card">
+              <div class="section-card-header">
+                <div class="section-card-title">
+                  <div class="title-icon icon-blue"><i class="fa-solid fa-users"></i></div>
+                  <span id="lbl-patient-mgmt">Patient Management</span>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="openAddPatientModal()">
+                  <i class="fa-solid fa-plus"></i> <span id="lbl-add-patient">Register Patient</span>
+                </button>
+              </div>
+              <div class="table-controls">
+                <div class="table-search">
+                  <i class="fa-solid fa-search search-icon"></i>
+                  <input type="text" id="patientSearchInput" placeholder="Search by name or village..." oninput="renderPatientsTable()">
+                </div>
+                <div class="flex gap-2">
+                  <select class="form-control" id="patientGenderFilter" onchange="renderPatientsTable()" style="width: auto;">
+                    <option value="">All Gender</option>
                     <option value="MALE">Male</option>
                     <option value="FEMALE">Female</option>
                     <option value="OTHER">Other</option>
                   </select>
                 </div>
               </div>
-
-              <!-- Dynamic Age Live Preview Box -->
-              <div class="age-preview-box" id="agePreviewBox">
-                <div class="age-title"><i class="fa-solid fa-cake-candles"></i> Calculated Age:</div>
-                <div class="age-value" id="agePreviewValue">Select Date of Birth to view age</div>
+              <div class="table-container">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th id="th-pt-name">Name</th>
+                      <th id="th-pt-village">Village</th>
+                      <th id="th-pt-age">Age</th>
+                      <th id="th-pt-gender">Gender</th>
+                      <th id="th-pt-phone">Phone</th>
+                      <th id="th-pt-action">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="patientsTableBody">
+                    <tr><td colspan="6" class="text-center text-muted" style="padding: 40px;">No patients registered yet.</td></tr>
+                  </tbody>
+                </table>
               </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="pPhone">Phone Number</label>
-                  <input type="tel" id="pPhone" placeholder="+91 9876543210">
-                </div>
-                <div class="form-group">
-                  <label for="pHistory">Medical History / Allergies</label>
-                  <input type="text" id="pHistory" placeholder="e.g. Diabetic, Penicillin allergy">
-                </div>
-              </div>
-
-              <button type="submit" class="btn btn-primary btn-full">
-                <i class="fa-solid fa-check"></i> Register Patient
-              </button>
-            </form>
-
-            <hr class="divider">
-
-            <!-- Search Patients -->
-            <div class="search-box">
-              <i class="fa-solid fa-magnifying-glass"></i>
-              <input type="text" id="patientSearchInput" placeholder="Search patients by name or village..." onkeyup="filterPatients()">
-            </div>
-
-            <!-- Patient List Table -->
-            <div class="table-container mt-3">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Village/Location</th>
-                    <th>Date of Birth</th>
-                    <th>Dynamic Age</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody id="patientsTableBody">
-                  <!-- Rendered dynamically -->
-                </tbody>
-              </table>
             </div>
           </div>
 
-          <!-- Prescription Generator Card -->
-          <div class="glass-card">
-            <div class="card-header">
-              <h2><i class="fa-solid fa-file-prescription"></i> Create Prescription</h2>
-              <span class="badge badge-indigo">Doctor Access Only</span>
+          <!-- ── Dr Panel: New Prescription ── -->
+          <div id="dr-panel-prescribe" style="display:none;">
+            <div class="section-card">
+              <div class="section-card-header">
+                <div class="section-card-title">
+                  <div class="title-icon icon-teal"><i class="fa-solid fa-prescription"></i></div>
+                  <span id="lbl-create-rx">Create Prescription</span>
+                </div>
+                <div class="flex gap-2 items-center">
+                  <span class="badge badge-teal" id="lbl-doctor-badge">Doctor Access</span>
+                  <button type="button" class="rx-preview-btn" onclick="openDrProfilePanel()">
+                    <i class="fa-solid fa-hospital"></i> My Profile
+                  </button>
+                </div>
+              </div>
+              <form id="prescriptionForm" onsubmit="handleGenerateRx(event)" style="padding:var(--space-4) 0;">
+
+                <!-- Patient Selection with inline add -->
+                <div class="form-group" style="margin-bottom:var(--space-4);">
+                  <label class="form-label" id="lbl-select-patient">Select Patient <span class="required">*</span></label>
+                  <div class="flex gap-2 items-start" style="flex-wrap:wrap;">
+                    <div style="flex:1; min-width:200px;">
+                      <select class="form-control" id="rxPatientSelect" onchange="onPatientSelectChange()" required>
+                        <option value="">— Select Patient —</option>
+                      </select>
+                      <!-- Inline add if not found -->
+                      <div class="patient-not-found-hint" id="patientNotFoundHint" style="display:none;">
+                        <span class="text-xs text-muted">Patient not in list?</span>
+                        <button type="button" class="btn-add-inline" onclick="openAddPatientFromRx()">
+                          <i class="fa-solid fa-user-plus"></i> Add New Patient
+                        </button>
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="openAddPatientFromRx()" title="Register new patient">
+                      <i class="fa-solid fa-user-plus"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="form-row" style="margin-bottom:var(--space-4);">
+                  <div class="form-group">
+                    <label class="form-label" id="lbl-diagnosis">Diagnosis <span class="required">*</span></label>
+                    <input class="form-control" id="rxDiagnosis" type="text" placeholder="e.g. Viral Fever / सर्दी ताप" required>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input class="form-control" id="rxDate" type="date">
+                  </div>
+                </div>
+
+                <!-- Medicine Rows Header -->
+                <div style="margin-bottom:var(--space-3);">
+                  <div class="flex items-center justify-between" style="margin-bottom:var(--space-2);">
+                    <label class="form-label" style="margin:0;" id="lbl-prescribed-meds">Prescribed Medicines</label>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="addRxRow()">
+                      <i class="fa-solid fa-plus"></i> <span id="lbl-add-med-row">Add Medicine</span>
+                    </button>
+                  </div>
+                  <!-- Column headers -->
+                  <div style="display:grid;grid-template-columns:40px 100px 1fr 80px 80px 80px 80px 40px;gap:8px;padding:6px 16px;font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;" class="rx-col-headers">
+                    <div>#</div>
+                    <div>Type</div>
+                    <div>Medicine Name</div>
+                    <div style="text-align:center;">सकाळी<br><span style="font-size:9px;">(Morning)</span></div>
+                    <div style="text-align:center;">दुपारी<br><span style="font-size:9px;">(Noon)</span></div>
+                    <div style="text-align:center;">रात्री<br><span style="font-size:9px;">(Night)</span></div>
+                    <div style="text-align:center;">दिवस<br><span style="font-size:9px;">(Days)</span></div>
+                    <div></div>
+                  </div>
+                  <div id="rxItemsContainer"></div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" id="lbl-rx-notes">सूचना / Advice / Doctor Notes</label>
+                  <textarea class="form-control" id="rxNotes" rows="3" placeholder="e.g. Drink plenty of water. Avoid oily food. Rest advised. / पुरेसे पाणी प्या. तळलेले खाऊ नका."></textarea>
+                </div>
+
+                <div class="flex gap-3" style="flex-wrap:wrap; margin-top:var(--space-4);">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-check-circle"></i> <span id="lbl-generate-rx">Issue Prescription</span>
+                  </button>
+                  <button type="button" class="btn btn-secondary" onclick="clearRxForm()">
+                    <i class="fa-solid fa-rotate-left"></i> Clear
+                  </button>
+                </div>
+              </form>
             </div>
+          </div>
 
-            <form id="prescriptionForm" onsubmit="handleCreatePrescription(event)">
-              <div class="form-group">
-                <label for="rxPatientSelect">Select Patient *</label>
-                <select id="rxPatientSelect" required>
-                  <option value="">-- Choose Patient --</option>
-                </select>
+          <!-- ── Dr Panel: Prescription History ── -->
+          <div id="dr-panel-history" style="display:none;">
+            <div class="section-card">
+              <div class="section-card-header">
+                <div class="section-card-title">
+                  <div class="title-icon icon-purple"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                  <span id="lbl-rx-history">Prescription History</span>
+                </div>
+                <div class="flex gap-2" style="flex-wrap: wrap;">
+                  <button class="btn btn-secondary btn-sm filter-btn active" onclick="filterRxStatus('', this)">All</button>
+                  <button class="btn btn-secondary btn-sm filter-btn" onclick="filterRxStatus('PENDING', this)">Pending</button>
+                  <button class="btn btn-secondary btn-sm filter-btn" onclick="filterRxStatus('DISPENSED', this)">Dispensed</button>
+                </div>
               </div>
-
-              <div class="form-group">
-                <label for="rxDiagnosis">Clinical Diagnosis *</label>
-                <input type="text" id="rxDiagnosis" placeholder="e.g. Acute Viral Fever & Bodyache" required>
+              <div class="table-container">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Rx #</th><th>Patient</th><th>Medicines</th><th>Status</th><th>Date</th><th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="historyRxTableBody"></tbody>
+                </table>
               </div>
+            </div>
+          </div>
 
-              <div class="form-group">
-                <label for="rxNotes">Doctor Notes / Dietary Advice</label>
-                <textarea id="rxNotes" rows="2" placeholder="e.g. Drink plenty of water. Avoid cold food."></textarea>
-              </div>
-
-              <div class="prescription-items-header">
-                <h3>Prescribed Medicines</h3>
-                <button type="button" class="btn btn-sm btn-secondary" onclick="addPrescriptionItemRow()">
-                  <i class="fa-solid fa-plus"></i> Add Medicine
+          <!-- ── Dr Panel: Store Admins ── -->
+          <div id="dr-panel-store" style="display:none;">
+            <div class="section-card">
+              <div class="section-card-header">
+                <div class="section-card-title">
+                  <div class="title-icon icon-amber"><i class="fa-solid fa-store"></i></div>
+                  <span id="lbl-store-admins">Medical Store Admins</span>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="openAddStoreAdminModal()">
+                  <i class="fa-solid fa-user-plus"></i> Assign Pharmacist
                 </button>
               </div>
-
-              <div id="rxItemsContainer" class="rx-items-container">
-                <!-- Medicine item rows inserted dynamically -->
+              <p class="text-sm text-muted mb-4">As the doctor, you can assign pharmacist accounts to manage your clinic's medical store inventory.</p>
+              <div id="storeAdminsList">
+                <div class="empty-state">
+                  <div class="empty-icon"><i class="fa-solid fa-user-plus"></i></div>
+                  <p>No pharmacists assigned yet. Add one to grant store access.</p>
+                </div>
               </div>
-
-              <button type="submit" class="btn btn-emerald btn-full mt-4">
-                <i class="fa-solid fa-paper-plane"></i> Generate & Issue Prescription
-              </button>
-            </form>
-          </div>
-
-        </div>
-
-        <!-- Recent Prescriptions History -->
-        <div class="glass-card mt-4">
-          <div class="card-header">
-            <h2><i class="fa-solid fa-clock-rotate-left"></i> Prescriptions History</h2>
-            <div class="filter-tabs">
-              <button class="filter-btn active" onclick="filterRxStatus('', this)">All</button>
-              <button class="filter-btn" onclick="filterRxStatus('PENDING', this)">Pending</button>
-              <button class="filter-btn" onclick="filterRxStatus('DISPENSED', this)">Dispensed</button>
             </div>
           </div>
 
-          <div class="table-container">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Prescription #</th>
-                  <th>Patient</th>
-                  <th>Village</th>
-                  <th>Diagnosis</th>
-                  <th>Medicines</th>
-                  <th>Status</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody id="recentRxTableBody">
-                <!-- Rendered dynamically -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- PHARMACIST DASHBOARD -->
-      <section id="pharmacistDashboard" class="dashboard-section">
-        
-        <!-- Inventory Summary Metrics Cards -->
-        <div class="metrics-grid">
-          <div class="metric-card glass-card">
-            <div class="metric-icon teal"><i class="fa-solid fa-boxes-stacked"></i></div>
-            <div class="metric-info">
-              <span class="metric-label">Total Medicines</span>
-              <span class="metric-value" id="metricTotalMeds">0</span>
-            </div>
-          </div>
-          <div class="metric-card glass-card">
-            <div class="metric-icon amber"><i class="fa-solid fa-triangle-exclamation"></i></div>
-            <div class="metric-info">
-              <span class="metric-label">Low Stock Alerts</span>
-              <span class="metric-value" id="metricLowStock">0</span>
-            </div>
-          </div>
-          <div class="metric-card glass-card">
-            <div class="metric-icon crimson"><i class="fa-solid fa-calendar-xmark"></i></div>
-            <div class="metric-info">
-              <span class="metric-label">Expiring Soon</span>
-              <span class="metric-value" id="metricExpiring">0</span>
-            </div>
-          </div>
-          <div class="metric-card glass-card">
-            <div class="metric-icon emerald"><i class="fa-solid fa-prescription-bottle-medical"></i></div>
-            <div class="metric-info">
-              <span class="metric-label">Pending Dispenses</span>
-              <span class="metric-value" id="metricPendingRx">0</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="dashboard-grid mt-4">
-          
-          <!-- Medical Store Inventory Card -->
-          <div class="glass-card">
-            <div class="card-header">
-              <h2><i class="fa-solid fa-prescription-bottle"></i> Medical Store Inventory</h2>
-              <button class="btn btn-sm btn-primary" onclick="openAddMedicineModal()">
-                <i class="fa-solid fa-plus"></i> Add New Medicine
-              </button>
-            </div>
-
-            <div class="table-controls">
-              <div class="search-box">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="inventorySearch" placeholder="Search medicine name or batch..." onkeyup="renderInventoryTable()">
+          <!-- ── Dr Panel: Patient History ── -->
+          <div id="dr-panel-patient-history" style="display:none;">
+            <div class="section-card">
+              <div class="section-card-header">
+                <div class="section-card-title">
+                  <div class="title-icon icon-indigo"><i class="fa-solid fa-timeline"></i></div>
+                  <span>Patient History Portal</span>
+                </div>
               </div>
-              <select id="inventoryCategoryFilter" onchange="renderInventoryTable()">
-                <option value="">All Categories</option>
-                <option value="Analgesic">Analgesic</option>
-                <option value="Antibiotic">Antibiotic</option>
-                <option value="Syrup">Syrup</option>
-                <option value="Vitamin">Vitamin</option>
-                <option value="Antacid">Antacid</option>
-              </select>
-            </div>
-
-            <div class="table-container mt-3">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Category</th>
-                    <th>Stock Quantity</th>
-                    <th>Price</th>
-                    <th>Expiry Date</th>
-                    <th>Batch</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="inventoryTableBody">
-                  <!-- Rendered dynamically -->
-                </tbody>
-              </table>
+              <div class="form-group" style="max-width: 400px;">
+                <label class="form-label">Select Patient to View History</label>
+                <select class="form-control" id="historyPatientSelect" onchange="renderPatientTimeline()">
+                  <option value="">— Select Patient —</option>
+                </select>
+              </div>
+              <div id="patientTimeline">
+                <div class="empty-state">
+                  <div class="empty-icon"><i class="fa-solid fa-timeline"></i></div>
+                  <p>Select a patient to view their complete history.</p>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Pending Prescriptions Dispense Queue -->
-          <div class="glass-card">
-            <div class="card-header">
-              <h2><i class="fa-solid fa-dispenser"></i> Pharmacy Dispense Queue</h2>
-              <span class="badge badge-amber">Live Stock Deduction</span>
-            </div>
-
-            <div class="dispense-queue-list" id="dispenseQueueList">
-              <!-- Rendered dynamically -->
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-    </main>
-
-    <!-- Add Medicine Modal -->
-    <div id="addMedicineModal" class="modal-backdrop">
-      <div class="modal-content glass-card">
-        <div class="modal-header">
-          <h3><i class="fa-solid fa-pills"></i> Add New Medicine to Store</h3>
-          <button class="close-btn" onclick="closeAddMedicineModal()">&times;</button>
-        </div>
-        <form id="addMedicineForm" onsubmit="handleAddMedicine(event)">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="mName">Medicine Name *</label>
-              <input type="text" id="mName" placeholder="e.g. Paracetamol 500mg" required>
-            </div>
-            <div class="form-group">
-              <label for="mCategory">Category *</label>
-              <input type="text" id="mCategory" placeholder="e.g. Analgesic, Antibiotic" required>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="mStock">Initial Stock Quantity *</label>
-              <input type="number" id="mStock" min="0" value="100" required>
-            </div>
-            <div class="form-group">
-              <label for="mPrice">Unit Price (₹) *</label>
-              <input type="number" id="mPrice" step="0.01" min="0" value="10.00" required>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="mExpiry">Expiry Date *</label>
-              <input type="date" id="mExpiry" required>
-            </div>
-            <div class="form-group">
-              <label for="mBatch">Batch Number *</label>
-              <input type="text" id="mBatch" placeholder="e.g. BATCH-2026-X" required>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="mUnit">Unit Type</label>
-              <select id="mUnit">
-                <option value="Tablets">Tablets</option>
-                <option value="Strip">Strip</option>
-                <option value="Bottle">Bottle</option>
-                <option value="Syrup">Syrup</option>
-                <option value="Injection">Injection</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="mAlert">Min Stock Threshold Alert</label>
-              <input type="number" id="mAlert" min="1" value="15">
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeAddMedicineModal()">Cancel</button>
-            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add to Inventory</button>
-          </div>
-        </form>
-      </div>
+        </div><!-- /dashboard-content -->
+      </main>
     </div>
-
-    <!-- Restock Modal -->
-    <div id="restockModal" class="modal-backdrop">
-      <div class="modal-content glass-card">
-        <div class="modal-header">
-          <h3><i class="fa-solid fa-boxes-packing"></i> Restock Medicine</h3>
-          <button class="close-btn" onclick="closeRestockModal()">&times;</button>
-        </div>
-        <form id="restockForm" onsubmit="handleRestockSubmit(event)">
-          <input type="hidden" id="restockMedId">
-          <p class="modal-sub" id="restockMedName">Medicine Name</p>
-          
-          <div class="form-group">
-            <label for="restockQuantity">Additional Stock Quantity *</label>
-            <input type="number" id="restockQuantity" min="1" value="50" required>
-          </div>
-          <div class="form-group">
-            <label for="restockNotes">Restock Notes</label>
-            <input type="text" id="restockNotes" value="New shipment received from vendor">
-          </div>
-
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeRestockModal()">Cancel</button>
-            <button type="submit" class="btn btn-emerald"><i class="fa-solid fa-arrow-up"></i> Update Stock</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
   </div>
 
-  <script src="app.js"></script>
+  <!-- ════════════════════════════════════════════════════
+       VIEW: PHARMACIST DASHBOARD
+       ════════════════════════════════════════════════════ -->
+  <div class="view" id="view-pharmacist">
+    <div class="dashboard-shell">
+      <aside class="sidebar" id="pharmSidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-brand"><div class="s-icon"><i class="fa-solid fa-staff-snake"></i></div>Prescripto</div>
+          <button class="sidebar-close" onclick="closeSidebar()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar" style="background: linear-gradient(135deg, #0ea5e9, #6366f1);" id="pharmAvatar">PH</div>
+          <div class="sidebar-user-name" id="pharmName">Store Pharmacist</div>
+          <div class="sidebar-user-role" style="color: #0ea5e9;">Pharmacist</div>
+          <div class="sidebar-clinic" id="pharmClinic">City Care Hospital</div>
+        </div>
+        <nav class="sidebar-nav">
+          <div class="sidebar-section">
+            <div class="sidebar-section-label">Store</div>
+            <button class="nav-item active" id="nav-ph-inventory" onclick="showPhPanel('inventory')">
+              <span class="nav-icon"><i class="fa-solid fa-pills"></i></span> Inventory
+            </button>
+            <button class="nav-item" id="nav-ph-dispense" onclick="showPhPanel('dispense')">
+              <span class="nav-icon"><i class="fa-solid fa-list-check"></i></span> Dispense Queue
+              <span class="nav-badge" id="pendingCountBadge">0</span>
+            </button>
+            <button class="nav-item" id="nav-ph-stock" onclick="showPhPanel('stock')">
+              <span class="nav-icon"><i class="fa-solid fa-boxes-packing"></i></span> Stock Ledger
+            </button>
+          </div>
+          <div class="sidebar-section">
+            <div class="sidebar-section-label">Account</div>
+            <button class="nav-item" onclick="openSupportQuery()">
+              <span class="nav-icon"><i class="fa-solid fa-circle-question"></i></span> Support
+            </button>
+            <button class="nav-item" onclick="confirmLogout()">
+              <span class="nav-icon"><i class="fa-solid fa-arrow-right-from-bracket"></i></span> Logout
+            </button>
+          </div>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="lang-selector-sidebar">
+            <button class="lang-btn-s active" id="sbl2-en" onclick="setLang('en')">EN</button>
+            <button class="lang-btn-s" id="sbl2-mr" onclick="setLang('mr')">मरा</button>
+            <button class="lang-btn-s" id="sbl2-hi" onclick="setLang('hi')">हिं</button>
+          </div>
+          <button class="btn btn-secondary btn-sm w-full" onclick="toggleTheme()">
+            <i class="fa-solid fa-circle-half-stroke"></i> Toggle Theme
+          </button>
+        </div>
+      </aside>
+
+      <main class="dashboard-main">
+        <header class="dashboard-topbar">
+          <div class="topbar-left">
+            <button class="menu-toggle" onclick="openSidebar('pharmSidebar')"><span></span><span></span><span></span></button>
+            <div class="page-title" id="pharmPageTitle">Inventory</div>
+          </div>
+          <div class="topbar-right">
+            <div class="metrics-grid" style="grid-template-columns: repeat(4,1fr); gap: var(--space-3); margin: 0;">
+              <div style="text-align:center; padding: 0 var(--space-2);">
+                <div style="font-size:20px; font-weight:800;" id="pharmTotalMeds">0</div>
+                <div style="font-size:10px; color: var(--text-muted);" id="lbl-ph-total">Total</div>
+              </div>
+              <div style="text-align:center; padding: 0 var(--space-2);">
+                <div style="font-size:20px; font-weight:800; color:#f87171;" id="pharmLowStock">0</div>
+                <div style="font-size:10px; color: var(--text-muted);" id="lbl-ph-low">Low Stock</div>
+              </div>
+              <div style="text-align:center; padding: 0 var(--space-2);">
+                <div style="font-size:20px; font-weight:800; color:#ef4444;" id="pharmExpiring">0</div>
+                <div style="font-size:10px; color: var(--text-muted);" id="lbl-ph-exp">Expired</div>
+              </div>
+              <div style="text-align:center; padding: 0 var(--space-2);">
+                <div style="font-size:20px; font-weight:800; color:#f59e0b;" id="pharmPending">0</div>
+                <div style="font-size:10px; color: var(--text-muted);" id="lbl-ph-pending">Pending Rx</div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div class="dashboard-content">
+
+          <!-- ── Pharm Panel: Inventory ── -->
+          <div id="ph-panel-inventory" style="display:none;" class="animate-fade-up">
+            <div class="section-card">
+              <div class="section-card-header">
+                <div class="section-card-title">
+                  <div class="title-icon icon-blue"><i class="fa-solid fa-pills"></i></div>
+                  <span id="lbl-inventory-title">Medicine Inventory</span>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="openAddMedicineModal()">
+                  <i class="fa-solid fa-plus"></i> <span id="lbl-add-med">Add Medicine</span>
+                </button>
+              </div>
+              <div class="table-controls">
+                <div class="table-search">
+                  <i class="fa-solid fa-search search-icon"></i>
+                  <input type="text" id="inventorySearch" placeholder="Search medicine, batch, HSN..." oninput="renderInventoryTable()">
+                </div>
+                <select class="form-control" id="inventoryCategoryFilter" onchange="renderInventoryTable()" style="width: auto;">
+                  <option value="">All Categories</option>
+                  <option value="Antibiotic">Antibiotic</option>
+                  <option value="Analgesic">Analgesic</option>
+                  <option value="Antacid">Antacid</option>
+                  <option value="Antifungal">Antifungal</option>
+                  <option value="Vitamin">Vitamin</option>
+                  <option value="Syrup">Syrup</option>
+                  <option value="Injection">Injection</option>
+                  <option value="Ointment">Ointment</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div class="table-container">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Image</th>
+                      <th id="th-inv-name">Medicine</th>
+                      <th id="th-inv-cat">Category</th>
+                      <th id="th-inv-stock">Stock</th>
+                      <th id="th-inv-price">Price</th>
+                      <th id="th-inv-exp">Expiry</th>
+                      <th id="th-inv-batch">Batch</th>
+                      <th id="th-inv-status">Status</th>
+                      <th id="th-inv-action">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="inventoryTableBody">
+                    <tr><td colspan="9" class="text-center text-muted" style="padding:40px;">No medicines in inventory.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Pharm Panel: Dispense Queue ── -->
+          <div id="ph-panel-dispense" style="display:none;">
+            <div class="section-card">
+              <div class="section-card-header">
+                <div class="section-card-title">
+                  <div class="title-icon icon-amber"><i class="fa-solid fa-list-check"></i></div>
+                  <span id="lbl-dispense-queue">Dispense Queue</span>
+                </div>
+                <span class="badge badge-amber"><i class="fa-solid fa-bolt"></i> Live Stock Deduction</span>
+              </div>
+              <div id="dispenseQueueList">
+                <div class="empty-state">
+                  <div class="empty-icon"><i class="fa-solid fa-check-double"></i></div>
+                  <p>No pending prescriptions. All caught up!</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Pharm Panel: Stock Ledger ── -->
+          <div id="ph-panel-stock" style="display:none;">
+            <div class="section-card">
+              <div class="section-card-header">
+                <div class="section-card-title">
+                  <div class="title-icon icon-indigo"><i class="fa-solid fa-boxes-packing"></i></div>
+                  <span id="lbl-stock-ledger">Stock Ledger & Restock Portal</span>
+                </div>
+              </div>
+              <p class="text-sm text-muted mb-4" id="lbl-stock-sub">Track provider details, HSN codes, shelf locations, and audit logs</p>
+              <div class="table-controls">
+                <div class="table-search">
+                  <i class="fa-solid fa-search search-icon"></i>
+                  <input type="text" id="stockSearchInput" placeholder="Search medicine, provider, HSN..." oninput="renderStockLedgerTable()">
+                </div>
+              </div>
+              <div class="table-container">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th id="th-sl-img">Image</th>
+                      <th id="th-sl-name">Medicine</th>
+                      <th id="th-sl-qty">Stock</th>
+                      <th id="th-sl-exp">Expiry</th>
+                      <th id="th-sl-prov">Provider</th>
+                      <th id="th-sl-hsn">HSN Code</th>
+                      <th id="th-sl-rack">Rack</th>
+                      <th id="th-sl-status">Status</th>
+                      <th id="th-sl-action">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="stockLedgerTableBody">
+                    <tr><td colspan="9" class="text-center text-muted" style="padding:40px;">Loading stock...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════
+       VIEW: MASTER ADMIN DASHBOARD
+       ════════════════════════════════════════════════════ -->
+  <div class="view" id="view-master-admin">
+    <div class="dashboard-shell">
+      <aside class="sidebar" id="adminSidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-brand"><div class="s-icon" style="background: var(--gradient-purple);"><i class="fa-solid fa-crown"></i></div>Prescripto Admin</div>
+          <button class="sidebar-close" onclick="closeSidebar()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar" style="background: var(--gradient-purple);">MA</div>
+          <div class="sidebar-user-name">Master Administrator</div>
+          <div class="sidebar-user-role" style="color: #8b5cf6;">SUPER ADMIN</div>
+        </div>
+        <nav class="sidebar-nav">
+          <div class="sidebar-section">
+            <div class="sidebar-section-label">Platform</div>
+            <button class="nav-item active" id="nav-ma-overview" onclick="showAdminPanel('overview')">
+              <span class="nav-icon"><i class="fa-solid fa-gauge"></i></span> Analytics
+            </button>
+            <button class="nav-item" id="nav-ma-hospitals" onclick="showAdminPanel('hospitals')">
+              <span class="nav-icon"><i class="fa-solid fa-hospital"></i></span> Hospitals
+            </button>
+            <button class="nav-item" id="nav-ma-subscriptions" onclick="showAdminPanel('subscriptions')">
+              <span class="nav-icon"><i class="fa-solid fa-credit-card"></i></span> Subscriptions
+            </button>
+            <button class="nav-item" id="nav-ma-queries" onclick="showAdminPanel('queries')">
+              <span class="nav-icon"><i class="fa-solid fa-inbox"></i></span> Support Queries
+              <span class="nav-badge" id="queryCountBadge">0</span>
+            </button>
+            <button class="nav-item" id="nav-ma-announce" onclick="showAdminPanel('announcements')">
+              <span class="nav-icon"><i class="fa-solid fa-bullhorn"></i></span> Announcements
+            </button>
+          </div>
+          <div class="sidebar-section">
+            <div class="sidebar-section-label">Account</div>
+            <button class="nav-item" onclick="confirmLogout()">
+              <span class="nav-icon"><i class="fa-solid fa-arrow-right-from-bracket"></i></span> Logout
+            </button>
+          </div>
+        </nav>
+        <div class="sidebar-footer">
+          <button class="btn btn-secondary btn-sm w-full" onclick="toggleTheme()">
+            <i class="fa-solid fa-circle-half-stroke"></i> Toggle Theme
+          </button>
+        </div>
+      </aside>
+
+      <main class="dashboard-main">
+        <header class="dashboard-topbar">
+          <div class="topbar-left">
+            <button class="menu-toggle" onclick="openSidebar('adminSidebar')"><span></span><span></span><span></span></button>
+            <div class="page-title" id="adminPageTitle">Platform Analytics</div>
+          </div>
+          <div class="topbar-right">
+            <span class="badge badge-purple"><i class="fa-solid fa-crown"></i> Master Admin</span>
+          </div>
+        </header>
+
+        <div class="dashboard-content">
+
+          <!-- ── Admin Panel: Overview ── -->
+          <div id="ma-panel-overview" style="display:none;" class="animate-fade-up">
+            <div class="admin-stat-grid">
+              <div class="metric-card" style="--metric-bg: rgba(16,185,129,0.12); --metric-color-text: #10b981;">
+                <div class="metric-icon"><i class="fa-solid fa-hospital"></i></div>
+                <div class="metric-value" id="maTotalHospitals">0</div>
+                <div class="metric-label">Total Hospitals</div>
+              </div>
+              <div class="metric-card" style="--metric-bg: rgba(14,165,233,0.12); --metric-color-text: #0ea5e9;">
+                <div class="metric-icon"><i class="fa-solid fa-users"></i></div>
+                <div class="metric-value" id="maTotalUsers">0</div>
+                <div class="metric-label">Total Doctors & Staff</div>
+              </div>
+              <div class="metric-card" style="--metric-bg: rgba(245,158,11,0.12); --metric-color-text: #f59e0b;">
+                <div class="metric-icon"><i class="fa-solid fa-inbox"></i></div>
+                <div class="metric-value" id="maOpenQueries">0</div>
+                <div class="metric-label">Open Support Queries</div>
+              </div>
+              <div class="metric-card" style="--metric-bg: rgba(139,92,246,0.12); --metric-color-text: #8b5cf6;">
+                <div class="metric-icon"><i class="fa-solid fa-credit-card"></i></div>
+                <div class="metric-value" id="maActiveSubscriptions">0</div>
+                <div class="metric-label">Active Subscriptions</div>
+              </div>
+            </div>
+
+            <div class="section-card">
+              <div class="section-card-header">
+                <div class="section-card-title">
+                  <div class="title-icon icon-teal"><i class="fa-solid fa-hospital"></i></div>
+                  Recently Registered Hospitals
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="showAdminPanel('hospitals')">View All</button>
+              </div>
+              <div id="recentHospitalsList"></div>
+            </div>
+          </div>
+
+          <!-- ── Admin Panel: Hospitals ── -->
+          <div id="ma-panel-hospitals" style="display:none;">
+            <div class="section-card">
+              <div class="section-card-header">
+                <div class="section-card-title">
+                  <div class="title-icon icon-teal"><i class="fa-solid fa-hospital"></i></div>
+                  Registered Hospitals
+                </div>
+              </div>
+              <div class="table-controls">
+                <div class="table-search">
+                  <i class="fa-solid fa-search search-icon"></i>
+                  <input type="text" id="hospitalSearch" placeholder="Search hospital or doctor..." oninput="renderHospitalsList()">
+                </div>
+                <select class="form-control" id="subscriptionFilter" onchange="renderHospitalsList()" style="width:auto;">
+                  <option value="">All Plans</option>
+                  <option value="FREE">Free</option>
+                  <option value="BASIC">Basic</option>
+                  <option value="PRO">Pro</option>
+                </select>
+              </div>
+              <div id="hospitalsList"></div>
+            </div>
+          </div>
+
+          <!-- ── Admin Panel: Subscriptions ── -->
+          <div id="ma-panel-subscriptions" style="display:none;">
+            <div class="section-card">
+              <div class="section-card-header">
+                <div class="section-card-title">
+                  <div class="title-icon icon-purple"><i class="fa-solid fa-credit-card"></i></div>
+                  Subscription Management
+                </div>
+              </div>
+              <div id="subscriptionsList"></div>
+            </div>
+          </div>
+
+          <!-- ── Admin Panel: Queries ── -->
+          <div id="ma-panel-queries" style="display:none;">
+            <div class="section-card">
+              <div class="section-card-header">
+                <div class="section-card-title">
+                  <div class="title-icon icon-amber"><i class="fa-solid fa-inbox"></i></div>
+                  Support Query Inbox
+                </div>
+                <span class="badge badge-amber" id="openQueryCount">0 Open</span>
+              </div>
+              <div id="queriesList"></div>
+            </div>
+          </div>
+
+          <!-- ── Admin Panel: Announcements ── -->
+          <div id="ma-panel-announcements" style="display:none;">
+            <div class="section-card">
+              <div class="section-card-header">
+                <div class="section-card-title">
+                  <div class="title-icon icon-blue"><i class="fa-solid fa-bullhorn"></i></div>
+                  Platform Announcements
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Broadcast Message to All Hospitals</label>
+                <textarea class="form-control" id="announceText" placeholder="Type your announcement here..." style="min-height: 120px;"></textarea>
+              </div>
+              <button class="btn btn-primary" onclick="broadcastAnnouncement()">
+                <i class="fa-solid fa-paper-plane"></i> Send Announcement
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+</div><!-- /app-root -->
+
+<!-- ══════════════════════════════════════
+     MODALS
+     ══════════════════════════════════════ -->
+
+<!-- Add Patient Modal -->
+<div class="modal-backdrop" id="addPatientModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa-solid fa-user-plus" style="color: var(--brand-primary);"></i> Register New Patient</div>
+      <button class="modal-close" onclick="closeModal('addPatientModal')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <form id="addPatientForm" onsubmit="handleAddPatient(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" id="lbl-pt-name">Patient Name <span class="required">*</span></label>
+            <input class="form-control" id="pName" type="text" placeholder="Full name" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" id="lbl-pt-village">Village / Location <span class="required">*</span></label>
+            <input class="form-control" id="pVillage" type="text" placeholder="Village, City" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" id="lbl-pt-dob">Date of Birth <span class="required">*</span></label>
+            <input class="form-control" id="pDob" type="date" required onchange="previewAge()">
+            <div id="agePreviewBox" class="age-badge" style="display:none; margin-top: var(--space-2);">
+              <i class="fa-solid fa-cake-candles"></i> <span id="agePreviewValue"></span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" id="lbl-pt-gender">Gender <span class="required">*</span></label>
+            <select class="form-control" id="pGender" required>
+              <option value="">Select Gender</option>
+              <option value="MALE">Male</option>
+              <option value="FEMALE">Female</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" id="lbl-pt-phone">Phone</label>
+            <input class="form-control" id="pPhone" type="tel" placeholder="+91 98765 43210">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Blood Group</label>
+            <select class="form-control" id="pBloodGroup">
+              <option value="">Unknown</option>
+              <option value="A+">A+</option><option value="A-">A-</option>
+              <option value="B+">B+</option><option value="B-">B-</option>
+              <option value="O+">O+</option><option value="O-">O-</option>
+              <option value="AB+">AB+</option><option value="AB-">AB-</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" id="lbl-pt-history">Medical History / Allergies</label>
+          <textarea class="form-control" id="pHistory" placeholder="Known allergies, chronic conditions..."></textarea>
+        </div>
+        <div class="modal-footer" style="border:none; padding: var(--space-4) 0 0; margin-top: var(--space-2);">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('addPatientModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Register Patient</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Add Medicine Modal -->
+<div class="modal-backdrop" id="addMedicineModal">
+  <div class="modal-box modal-box-lg">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa-solid fa-pills" style="color: var(--brand-primary);"></i> Add New Medicine</div>
+      <button class="modal-close" onclick="closeModal('addMedicineModal')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <form id="addMedicineForm" onsubmit="handleAddMedicine(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" id="lbl-med-name">Medicine Name <span class="required">*</span></label>
+            <input class="form-control" id="mName" type="text" placeholder="e.g. Paracetamol 500mg" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" id="lbl-med-cat">Category <span class="required">*</span></label>
+            <select class="form-control" id="mCategory" required>
+              <option value="">Select category</option>
+              <option value="Antibiotic">Antibiotic</option>
+              <option value="Analgesic">Analgesic</option>
+              <option value="Antacid">Antacid</option>
+              <option value="Antifungal">Antifungal</option>
+              <option value="Vitamin">Vitamin</option>
+              <option value="Syrup">Syrup</option>
+              <option value="Injection">Injection</option>
+              <option value="Ointment">Ointment</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" id="lbl-med-stock">Initial Stock <span class="required">*</span></label>
+            <input class="form-control" id="mStock" type="number" placeholder="100" required min="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label" id="lbl-med-unit">Unit Type</label>
+            <select class="form-control" id="mUnit">
+              <option value="Tablets">Tablets</option>
+              <option value="Capsules">Capsules</option>
+              <option value="Strips">Strips</option>
+              <option value="Bottles">Bottles</option>
+              <option value="ml">ml</option>
+              <option value="Ampoules">Ampoules</option>
+              <option value="Tubes">Tubes</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" id="lbl-med-price">Price (₹) <span class="required">*</span></label>
+            <input class="form-control" id="mPrice" type="number" placeholder="12.50" required min="0" step="0.01">
+          </div>
+          <div class="form-group">
+            <label class="form-label" id="lbl-med-alert">Min Stock Alert</label>
+            <input class="form-control" id="mAlert" type="number" placeholder="10" value="10" min="0">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" id="lbl-med-expiry">Expiry Date <span class="required">*</span></label>
+            <input class="form-control" id="mExpiry" type="date" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" id="lbl-med-batch">Batch Number <span class="required">*</span></label>
+            <input class="form-control" id="mBatch" type="text" placeholder="PCM-2026-A1" required>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="form-group">
+          <label class="form-label" id="lbl-med-img">Medicine Image URL</label>
+          <input class="form-control" id="mImgUrl" type="url" placeholder="https://example.com/medicine.jpg">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" id="lbl-med-provider">Supplier / Provider Name</label>
+            <input class="form-control" id="mProviderName" type="text" placeholder="Apex Pharma Distributors">
+          </div>
+          <div class="form-group">
+            <label class="form-label" id="lbl-med-contact">Provider Contact</label>
+            <input class="form-control" id="mProviderContact" type="text" placeholder="+91 9876543210">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" id="lbl-med-hsn">HSN Code</label>
+            <input class="form-control" id="mHsnCode" type="text" placeholder="30049099">
+          </div>
+          <div class="form-group">
+            <label class="form-label" id="lbl-med-rack">Rack / Shelf Location</label>
+            <input class="form-control" id="mRackLocation" type="text" placeholder="Rack A-12">
+          </div>
+        </div>
+        <div class="modal-footer" style="border:none; padding: var(--space-4) 0 0;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('addMedicineModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add to Inventory</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Restock Modal -->
+<div class="modal-backdrop" id="restockModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa-solid fa-boxes-packing" style="color: var(--brand-primary);"></i> Restock Medicine</div>
+      <button class="modal-close" onclick="closeModal('restockModal')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <form id="restockForm" onsubmit="handleRestockSubmit(event)">
+        <input type="hidden" id="restockMedId">
+        <div class="glass-card" style="padding: var(--space-4); margin-bottom: var(--space-5);">
+          <div class="flex items-center gap-3">
+            <div class="metric-icon" style="background: rgba(16,185,129,0.12); color: var(--brand-primary); min-width: 42px;">
+              <i class="fa-solid fa-pills"></i>
+            </div>
+            <div>
+              <div class="font-bold" id="restockMedName">Medicine Name</div>
+              <div class="text-sm text-muted" id="restockCurrentStock">Current Stock: —</div>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quantity to Add <span class="required">*</span></label>
+          <input class="form-control" id="restockQuantity" type="number" placeholder="Enter quantity" required min="1">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">New Batch Number</label>
+            <input class="form-control" id="restockBatch" type="text" placeholder="New batch number">
+          </div>
+          <div class="form-group">
+            <label class="form-label">New Expiry Date</label>
+            <input class="form-control" id="restockExpiry" type="date">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Restock Notes</label>
+          <input class="form-control" id="restockNotes" type="text" placeholder="e.g. Emergency order from vendor">
+        </div>
+        <div class="modal-footer" style="border:none; padding: var(--space-4) 0 0;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('restockModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Update Stock</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Add Store Admin Modal -->
+<div class="modal-backdrop" id="addStoreAdminModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa-solid fa-user-plus" style="color: var(--brand-primary);"></i> Assign Store Admin</div>
+      <button class="modal-close" onclick="closeModal('addStoreAdminModal')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <p class="text-sm text-muted mb-4">Enter the email address of the pharmacist you want to assign as a store admin for your clinic.</p>
+      <form id="addStoreAdminForm" onsubmit="handleAddStoreAdmin(event)">
+        <div class="form-group">
+          <label class="form-label">Pharmacist Name <span class="required">*</span></label>
+          <input class="form-control" id="storeAdminName" type="text" placeholder="Full name" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Pharmacist Email <span class="required">*</span></label>
+          <input class="form-control" id="storeAdminEmail" type="email" placeholder="pharmacist@email.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Set Password for Account</label>
+          <input class="form-control" id="storeAdminPassword" type="password" placeholder="Temporary password" required minlength="6">
+        </div>
+        <div class="modal-footer" style="border:none; padding: var(--space-4) 0 0;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('addStoreAdminModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Assign & Create Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Support Query Modal -->
+<div class="modal-backdrop" id="supportQueryModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa-solid fa-circle-question" style="color: var(--brand-primary);"></i> Send Support Query</div>
+      <button class="modal-close" onclick="closeModal('supportQueryModal')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <form id="supportQueryForm" onsubmit="handleSupportQuery(event)">
+        <div class="form-group">
+          <label class="form-label">Subject <span class="required">*</span></label>
+          <input class="form-control" id="querySubject" type="text" placeholder="Brief description of your issue" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Message <span class="required">*</span></label>
+          <textarea class="form-control" id="queryMessage" style="min-height: 120px;" placeholder="Describe your issue in detail..." required></textarea>
+        </div>
+        <div class="modal-footer" style="border:none; padding: var(--space-4) 0 0;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('supportQueryModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Send Query</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Print Prescription Modal -->
+<div class="modal-backdrop" id="printModal">
+  <div class="modal-box modal-box-lg">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa-solid fa-print" style="color: var(--brand-primary);"></i> Prescription Preview</div>
+      <div class="flex gap-2">
+        <div class="flex" style="background: var(--bg-glass); border-radius: var(--radius-md); padding: 3px; gap: 2px;">
+          <button class="lang-btn-s active" id="printLangEn" onclick="setPrintLang('en')">EN</button>
+          <button class="lang-btn-s" id="printLangMr" onclick="setPrintLang('mr')">मरा</button>
+          <button class="lang-btn-s" id="printLangHi" onclick="setPrintLang('hi')">हिं</button>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="window.print()"><i class="fa-solid fa-print"></i> Print</button>
+        <button class="modal-close" onclick="closeModal('printModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    </div>
+    <div class="modal-body" id="printModalBody">
+      <div id="printableRxArea"></div>
+    </div>
+  </div>
+</div>
+
+<!-- App JS -->
+<script src="app.js"></script>
 </body>
 </html>

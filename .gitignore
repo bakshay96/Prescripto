@@ -9,6 +9,12 @@ venv/
 ENV/
 .venv
 
+# Secrets & Environment Files (NEVER COMMIT)
+.env
+.env.*
+*.env
+!.env.example
+
 # Database & SQLite
 *.db
 *.sqlite3
@@ -27,5 +33,8 @@ out/
 dist/
 .DS_Store
 
-# Local Environment Overrides (optional to ignore or commit templates)
-.env.local
+# Temporary & Helper Scripts (NEVER COMMIT)
+scratch/
+*.ps1
+*.bat
+test_*.py
