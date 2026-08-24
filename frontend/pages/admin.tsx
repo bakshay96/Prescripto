@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import { useTheme } from "../components/ThemeContext";
 import RoleGuard from "../components/RoleGuard";
 import { TransliteratedInput, TransliteratedTextArea } from "../components/TransliteratedInput";
+import VerticalSidebarNav from "../components/VerticalSidebarNav";
 import {
   getUser,
   getAdminAnalytics,
@@ -186,6 +187,20 @@ function AdminContent() {
         message: msgBody,
         priority: msgPriority,
       });
+      
+      // Dispatch real-time audio sound chime & notification panel event
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("admin-broadcast", {
+            detail: {
+              subject: `📢 ${msgSubject}`,
+              message: msgBody,
+              priority: msgPriority,
+            },
+          })
+        );
+      }
+
       setActionMsg(res.message);
       setMsgModalOpen(false);
       setMsgSubject("");
@@ -226,16 +241,30 @@ function AdminContent() {
       </Head>
 
       <div
-        className="ux4g-theme-govblue"
+        className="ux4g-theme-govblue flex h-[calc(100vh-76px)] overflow-hidden"
         style={{
-          minHeight: "100vh",
           backgroundColor: theme.bg,
           color: theme.text,
           fontFamily: "'Noto Sans Devanagari', 'Inter', system-ui, Arial, sans-serif",
-          padding: "24px 16px 100px",
         }}
       >
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+        {/* Left Vertical Navigation Panel */}
+        <VerticalSidebarNav
+          mode="ADMIN"
+          activeTab={activeTab}
+          onTabSelect={(t) => setActiveTab(t as AdminTab)}
+          adminBadges={{
+            hospitals: hospitals.length,
+            users: userVitals.length ? `${userVitals.filter((u) => u.is_online).length} Live` : null,
+            plans: plans.length,
+            trials: hospitals.filter((h) => h.subscription_plan === "TRIAL" || (h.trial_days_remaining ?? 0) > 0).length,
+            broadcast: broadcasts.length,
+            queries: queries.filter((q) => q.status === "OPEN").length ? `${queries.filter((q) => q.status === "OPEN").length} Open` : null,
+          }}
+        />
+
+        {/* Main Content Area */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-7xl mx-auto space-y-6 min-w-0">
           
           {/* ══ UX4G Header Strip ══ */}
           <div
@@ -327,62 +356,7 @@ function AdminContent() {
             </div>
           )}
 
-          {/* ══ UX4G Navigation Tabs ══ */}
-          <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
-            {[
-              { id: "overview", label: "📊 System Analytics", badge: analytics ? `${analytics.total_hospitals} Hosp` : null },
-              { id: "hospitals", label: "🏥 Hospitals & Medical Stores", badge: `${hospitals.length}` },
-              { id: "users", label: "👥 User Accounts & Live Login Vitals", badge: userVitals.length ? `${userVitals.filter((u) => u.is_online).length} Live` : null },
-              { id: "plans", label: "💳 Plans & Pricing Control", badge: `${plans.length}` },
-              { id: "trials", label: "⭐ Subscription & Trial Manager", badge: `${hospitals.filter((h) => h.subscription_plan === "TRIAL" || (h.trial_days_remaining ?? 0) > 0).length}` },
-              { id: "broadcast", label: "📢 Broadcast Messages", badge: `${broadcasts.length}` },
-              { id: "queries", label: "💬 Support Desk", badge: queries.filter((q) => q.status === "OPEN").length ? `${queries.filter((q) => q.status === "OPEN").length} Open` : null },
-            ].map((t) => {
-              const isActive = activeTab === t.id;
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setActiveTab(t.id as AdminTab)}
-                  style={{
-                    padding: "10px 16px",
-                    borderRadius: 10,
-                    fontSize: 13,
-                    fontWeight: 800,
-                    cursor: "pointer",
-                    border: `1.5px solid ${isActive ? "#ff671f" : isDark ? "#334155" : "#cbd5e1"}`,
-                    background: isActive
-                      ? "linear-gradient(135deg,#005691 0%,#0b192c 100%)"
-                      : isDark
-                      ? "#0f172a"
-                      : "#ffffff",
-                    color: isActive ? "#ffffff" : theme.textMuted,
-                    boxShadow: isActive ? "0 4px 14px rgba(0,86,145,0.3)" : "none",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 8,
-                    transition: "all 0.15s ease",
-                  }}
-                >
-                  <span>{t.label}</span>
-                  {t.badge && (
-                    <span
-                      style={{
-                        padding: "1px 6px",
-                        borderRadius: 10,
-                        fontSize: 10,
-                        fontWeight: 900,
-                        background: isActive ? "#ff671f" : isDark ? "rgba(255,255,255,0.1)" : "#f1f5f9",
-                        color: "#fff",
-                      }}
-                    >
-                      {t.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+
 
           {/* ════ TAB 1: SYSTEM ANALYTICS ════ */}
           {activeTab === "overview" && (

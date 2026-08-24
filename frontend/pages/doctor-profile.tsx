@@ -2,6 +2,7 @@ import Head from "next/head";
 import { useTheme } from "../components/ThemeContext";
 import DoctorProfilePanel from "../components/DoctorProfilePanel";
 import RoleGuard from "../components/RoleGuard";
+import VerticalSidebarNav from "../components/VerticalSidebarNav";
 
 function DoctorProfileContent() {
   const { theme, lang } = useTheme();
@@ -24,14 +25,17 @@ function DoctorProfileContent() {
         <title>Hospital Profile — Prescripto</title>
         <meta name="description" content="Set your hospital name, doctor details, qualifications, facilities and clinic hours used on every printed prescription." />
       </Head>
-      <div style={{
-        minHeight: "100vh",
-        backgroundColor: theme.bg,
-        color: theme.text,
-        fontFamily: "'Inter','Noto Sans Devanagari',Arial,sans-serif",
-        transition: "background-color 0.3s, color 0.3s",
-      }}>
-        <div style={{ maxWidth: 1080, margin: "0 auto", padding: "20px 16px 80px" }}>
+      <div
+        className="flex h-[calc(100vh-76px)] overflow-hidden"
+        style={{
+          backgroundColor: theme.bg,
+          color: theme.text,
+          fontFamily: "'Inter','Noto Sans Devanagari',Arial,sans-serif",
+          transition: "background-color 0.3s, color 0.3s",
+        }}
+      >
+        <VerticalSidebarNav mode="DOCTOR" />
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-7xl mx-auto space-y-6 min-w-0">
           <div style={{ marginBottom: 24 }}>
             <h1 style={{ fontSize: 22, fontWeight: 800, color: theme.text, margin: 0 }}>
               {TITLE[lang] ?? TITLE.en}

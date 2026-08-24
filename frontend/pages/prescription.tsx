@@ -4,6 +4,7 @@ import { useTheme } from "../components/ThemeContext";
 import PrescriptionWriter from "../components/PrescriptionWriter";
 import DoctorProfilePanel from "../components/DoctorProfilePanel";
 import SubscriptionPaymentModal from "../components/SubscriptionPaymentModal";
+import VerticalSidebarNav from "../components/VerticalSidebarNav";
 import { INITIAL_MEDICINES, MedicineItem } from "../components/InventoryDashboard";
 import {
   listMedicines,
@@ -189,16 +190,16 @@ function DoctorDashboardContent() {
       </Head>
 
       <div
-        className="ux4g-theme-govblue"
+        className="ux4g-theme-govblue flex h-[calc(100vh-76px)] overflow-hidden"
         style={{
-          minHeight: "100vh",
           backgroundColor: theme.bg,
           color: theme.text,
           fontFamily: "'Noto Sans Devanagari', 'Inter', system-ui, Arial, sans-serif",
-          padding: "20px 16px 80px",
         }}
       >
-        <div style={{ width: "100%", maxWidth: "100%" }}>
+        <VerticalSidebarNav mode="DOCTOR" />
+
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-7xl mx-auto space-y-6 min-w-0">
           {/* Header */}
           <div
             style={{
@@ -304,279 +305,19 @@ function DoctorDashboardContent() {
                   </div>
                 )}
               </div>
-
-              <button
-                type="button"
-                onClick={() => setPayModalOpen(true)}
-                className="ux4g-btn ux4g-btn-saffron"
-              >
-                💳 Upgrade Plan / Pay via Razorpay
-              </button>
             </div>
           </div>
 
-          {/* Doctor Navigation Tabs */}
-          <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
-            {[
-              { id: "writer", label: "✍️ Write Prescription", icon: "✍️" },
-              { id: "patients", label: "👥 Patients Directory", count: patients.length },
-              { id: "profile", label: "🏥 Doctor Profile & Header Setup" },
-              { id: "subscription", label: "💳 Subscription & Payments" },
-            ].map((t) => {
-              const isActive = activeTab === t.id;
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setActiveTab(t.id as DoctorTab)}
-                  style={{
-                    padding: "9px 16px",
-                    borderRadius: 10,
-                    fontSize: 13,
-                    fontWeight: 800,
-                    cursor: "pointer",
-                    border: `1.5px solid ${isActive ? "#ff671f" : isDark ? "#334155" : "#cbd5e1"}`,
-                    background: isActive
-                      ? "linear-gradient(135deg,#005691 0%,#0b192c 100%)"
-                      : isDark
-                      ? "#0f172a"
-                      : "#ffffff",
-                    color: isActive ? "#ffffff" : theme.textMuted,
-                    boxShadow: isActive ? "0 4px 14px rgba(0,86,145,0.3)" : "none",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 8,
-                    transition: "all 0.15s ease",
-                  }}
-                >
-                  <span>{t.label}</span>
-                  {t.count !== undefined && (
-                    <span
-                      style={{
-                        padding: "1px 6px",
-                        borderRadius: 10,
-                        fontSize: 10,
-                        fontWeight: 900,
-                        background: isActive ? "#ff671f" : isDark ? "rgba(255,255,255,0.1)" : "#f1f5f9",
-                        color: "#fff",
-                      }}
-                    >
-                      {t.count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* TAB 1: PRESCRIPTION WRITER */}
-          {activeTab === "writer" && (
-            <PrescriptionWriter
-              inventoryMeds={inventoryMeds}
-              isDark={isDark}
-              userRole="DOCTOR"
-            />
-          )}
-
-          {/* TAB 2: PATIENTS DIRECTORY */}
-          {activeTab === "patients" && (
-            <div className="ux4g-card" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div className="ux4g-card-header">
-                <div className="ux4g-card-title">👥 Registered OPD Patients Directory &amp; Diagnosis Records</div>
-                <div style={{ fontSize: 12, color: theme.textMuted }}>Total {patients.length} Registered</div>
-              </div>
-
-              <input
-                type="text"
-                placeholder="Search patient by name or village location…"
-                value={patientSearch}
-                onChange={(e) => setPatientSearch(e.target.value)}
-                className="ux4g-input"
-              />
-
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, textAlign: "left" }}>
-                  <thead>
-                    <tr style={{ background: isDark ? "#020617" : "#f1f5f9", borderBottom: `1px solid ${isDark ? "#1e293b" : "#e2e8f0"}` }}>
-                      <th style={{ padding: "10px 14px", fontWeight: 900 }}>Patient Name &amp; Status</th>
-                      <th style={{ padding: "10px 14px", fontWeight: 900 }}>Village / Location</th>
-                      <th style={{ padding: "10px 14px", fontWeight: 900 }}>Age &amp; Gender</th>
-                      <th style={{ padding: "10px 14px", fontWeight: 900 }}>Phone</th>
-                      <th style={{ padding: "10px 14px", fontWeight: 900, textAlign: "right" }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredPatients.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} style={{ padding: 24, textAlign: "center", color: theme.textMuted }}>
-                          No patient records found.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredPatients.map((p) => (
-                        <tr key={p.id} style={{ borderBottom: `1px solid ${isDark ? "#1e293b" : "#f1f5f9"}` }}>
-                          <td style={{ padding: "10px 14px", fontWeight: 800 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                              <span style={{ color: p.is_banned ? "#ef4444" : theme.text }}>{p.name}</span>
-                              {p.is_banned ? (
-                                <span className="ux4g-badge ux4g-badge-red" style={{ fontSize: 10 }}>🚫 BANNED</span>
-                              ) : (
-                                <span className="ux4g-badge ux4g-badge-green" style={{ fontSize: 10 }}>ACTIVE</span>
-                              )}
-                            </div>
-                            {p.ban_reason && (
-                              <div style={{ fontSize: 10, color: "#ef4444", fontWeight: 600, marginTop: 2 }}>
-                                Reason: {p.ban_reason}
-                              </div>
-                            )}
-                          </td>
-                          <td style={{ padding: "10px 14px", color: theme.textMuted }}>{p.village_location || "N/A"}</td>
-                          <td style={{ padding: "10px 14px" }}>
-                            {p.age?.formatted || "N/A"} · {p.gender}
-                          </td>
-                          <td style={{ padding: "10px 14px", color: theme.textMuted }}>{p.phone || "N/A"}</td>
-                          <td style={{ padding: "10px 14px", textAlign: "right" }}>
-                            <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", flexWrap: "wrap" }}>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  getPatientHistory(p.id)
-                                    .then((res) => setSelectedPatientHistory(res))
-                                    .catch(() => {});
-                                }}
-                                className="ux4g-btn ux4g-btn-outline"
-                                style={{ padding: "4px 8px", fontSize: 11 }}
-                              >
-                                📜 EHR History
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => setEditingPatient(p)}
-                                className="ux4g-btn ux4g-btn-outline"
-                                style={{ padding: "4px 8px", fontSize: 11 }}
-                              >
-                                ✏️ Edit
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => handleBanToggle(p)}
-                                className={`ux4g-btn ${p.is_banned ? "ux4g-btn-green" : "ux4g-btn-outline"}`}
-                                style={{ padding: "4px 8px", fontSize: 11, color: p.is_banned ? undefined : "#ef4444", borderColor: p.is_banned ? undefined : "#ef4444" }}
-                              >
-                                {p.is_banned ? "🟢 Unban OPD" : "🚫 Ban OPD"}
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteHistoryClick(p)}
-                                className="ux4g-btn ux4g-btn-outline"
-                                style={{ padding: "4px 8px", fontSize: 11, color: "#f59e0b", borderColor: "#f59e0b" }}
-                              >
-                                🧹 Clear History
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => handleDeletePatientClick(p)}
-                                className="ux4g-btn ux4g-btn-outline"
-                                style={{ padding: "4px 8px", fontSize: 11, color: "#dc2626", borderColor: "#dc2626" }}
-                              >
-                                🗑️ Delete
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: PROFILE SETUP */}
-          {activeTab === "profile" && (
-            <DoctorProfilePanel isDark={isDark} />
-          )}
-
-          {/* TAB 4: SUBSCRIPTION */}
-          {activeTab === "subscription" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-              {/* Active Plan Detail Card */}
-              <div
-                className="ux4g-card"
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: 16,
-                  background: isDark ? "linear-gradient(135deg,#005691 0%,#0b192c 100%)" : "linear-gradient(135deg,#e0f2fe 0%,#ffffff 100%)",
-                  border: "1.5px solid #005691",
-                }}
-              >
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontSize: 24 }}>⭐</span>
-                    <div>
-                      <div style={{ fontSize: 18, fontWeight: 900, color: isDark ? "#ffffff" : "#005691" }}>
-                        Active Subscription: PRO PLAN
-                      </div>
-                      <div style={{ fontSize: 12, color: isDark ? "#90caf9" : "#005691", marginTop: 2 }}>
-                        Valid Until: <strong>2026-09-20</strong> (30 Days Remaining) · Status: <strong>ACTIVE</strong>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setPayModalOpen(true)}
-                  className="ux4g-btn ux4g-btn-saffron"
-                >
-                  💳 Renew / Upgrade via Razorpay
-                </button>
-              </div>
-
-              {/* Plan Benefits Grid */}
-              <div className="ux4g-card" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <div className="ux4g-card-header">
-                  <div className="ux4g-card-title">✨ Hospital Features &amp; Capabilities Unlocked</div>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
-                  {[
-                    { title: "📄 Digital Prescriptions", desc: "Unlimited A4 Multilingual Print (Mr/Hi/En)", active: true },
-                    { title: "🧪 Pharmacy Inventory Sync", desc: "Real-time stock deduction with Medical Store", active: true },
-                    { title: "👥 Patients EHR History", desc: "Lifetime patient records & village mapping", active: true },
-                    { title: "🖊️ Digital Signature", desc: "Canvas drawing & uploaded stamp verification", active: true },
-                    { title: "🏛️ UX4G Gov Theme", desc: "High-contrast accessibility & font scaling", active: true },
-                    { title: "🔒 HMAC Security", desc: "256-bit Razorpay bank-grade encryption", active: true },
-                  ].map((feat, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        padding: 14,
-                        borderRadius: 12,
-                        background: isDark ? "#020617" : "#f8fafc",
-                        border: `1px solid ${isDark ? "#1e293b" : "#e2e8f0"}`,
-                      }}
-                    >
-                      <div style={{ fontSize: 13, fontWeight: 900, color: theme.text, display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ color: "#046a38" }}>✓</span> {feat.title}
-                      </div>
-                      <div style={{ fontSize: 11, color: theme.textMuted, marginTop: 4 }}>{feat.desc}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Prescription Writer — vertical sidebar handles all other navigation */}
+          <PrescriptionWriter
+            inventoryMeds={inventoryMeds}
+            isDark={isDark}
+            userRole="DOCTOR"
+          />
 
         </div>
       </div>
+
 
       <SubscriptionPaymentModal
         isOpen={payModalOpen}

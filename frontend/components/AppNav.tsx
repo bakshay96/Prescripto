@@ -60,34 +60,10 @@ export default function AppNav() {
         </span>
       </Link>
 
-      {/* Nav links */}
-      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-        {LINKS.map(l => {
-          const active = pathname === l.href;
-          return (
-            <Link key={l.href} href={l.href} style={{ textDecoration: "none" }}>
-              <div style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "7px 14px", borderRadius: 10,
-                fontSize: 12, fontWeight: active ? 800 : 600,
-                backgroundColor: active ? `${theme.accent}18` : "transparent",
-                border: active ? `1px solid ${theme.accent}40` : "1px solid transparent",
-                color: active ? theme.accent : theme.textMuted,
-                transition: "all 0.2s",
-                cursor: "pointer",
-              }}>
-                <span>{l.icon}</span>
-                <span style={{ fontFamily: "'Noto Sans Devanagari','Inter',Arial,sans-serif" }}>
-                  {getLinkLabel(l)}
-                </span>
-              </div>
-            </Link>
-          );
-        })}
-
-        {/* User Auth state */}
+      {/* User Auth & Session status */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         {user ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: 12, paddingLeft: 12, borderLeft: `1px solid ${theme.border}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ fontSize: 11, textAlign: "right" }}>
               <div style={{ color: theme.text, fontWeight: 700 }}>{user.full_name || "Doctor"}</div>
               <div style={{ color: theme.accent, fontSize: 9.5, fontWeight: 800 }}>{user.role}</div>
@@ -104,7 +80,7 @@ export default function AppNav() {
             </button>
           </div>
         ) : (
-          <Link href="/login" style={{ textDecoration: "none", marginLeft: 8 }}>
+          <Link href="/login" style={{ textDecoration: "none" }}>
             <div style={{
               background: "linear-gradient(135deg,#c41e3a,#e53e3e)",
               color: "white", padding: "7px 14px", borderRadius: 8, fontSize: 12,

@@ -3,7 +3,7 @@
  * Automatically attaches JWT Authorization header from localStorage.
  */
 
-const PRIMARY_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+export const PRIMARY_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 const FALLBACK_BASE = "http://127.0.0.1:8080";
 
 // ── Token helpers ──────────────────────────────────────────────────────────
@@ -569,6 +569,97 @@ export function respondSupportQuery(queryId: string, responseText: string): Prom
   return apiFetch<SupportQuery>(`/admin/queries/${queryId}/respond`, {
     method: "POST",
     body: JSON.stringify({ response: responseText }),
+  });
+}
+
+// ── Doctor & Pharmacy Communication Desk ────────────────────────────────────
+
+export interface CommMessage {
+  id: string;
+  clinic_id: string;
+  sender_id: string;
+  sender_name: string;
+  sender_role: string;
+  recipient_role: string;
+  message: string;
+  prescription_id?: string | null;
+  patient_name?: string | null;
+  priority: string;
+  created_at: string;
+}
+
+export function listCommMessages(): Promise<CommMessage[]> {
+  return apiFetch<CommMessage[]>("/communication/messages");
+}
+
+export function sendCommMessage(data: {
+  message: string;
+  recipient_role?: string;
+  prescription_id?: string;
+  patient_name?: string;
+  priority?: string;
+}): Promise<CommMessage> {
+  return apiFetch<CommMessage>("/communication/messages", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+// ── Persistent System Notifications & Alerts ────────────────────────────────
+
+export interface SystemApiNotification {
+  id: string;
+  category: "PRICING" | "FEATURE_ALERT" | "BROADCAST" | "MESSAGE" | "SYSTEM";
+  title: string;
+  message: string;
+  target_role: string;
+  target_clinic_id?: string | null;
+  priority: string;
+  read: boolean;
+  expires_at?: string | null;
+  reping_count?: number;
+  created_at: string;
+}
+
+export function listApiNotifications(): Promise<SystemApiNotification[]> {
+  return apiFetch<SystemApiNotification[]>("/notifications");
+}
+
+export function markApiNotificationsRead(): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>("/notifications/mark-read", { method: "POST" });
+}
+
+export function sendApiBroadcastNotification(data: {
+  category: string;
+  title: string;
+  message: string;
+  target_role?: string;
+  target_clinic_id?: string;
+  priority?: string;
+  expiry_hours?: number;
+}): Promise<{ message: string; id: string }> {
+  return apiFetch<{ message: string; id: string }>("/notifications/broadcast", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function repingApiNotification(notificationId: string): Promise<{ message: string; reping_count: number }> {
+  return apiFetch<{ message: string; reping_count: number }>(`/notifications/${notificationId}/reping`, { method: "POST" });
+}
+
+export function triggerWsBroadcastApi(payload: {
+  event: string;
+  title: string;
+  message: string;
+  target_role?: string;
+  target_clinic_id?: string;
+  priority?: string;
+  expires_at?: string;
+}): Promise<any> {
+  return apiFetch<any>("/ws/broadcast", {
+    method: "POST",
+    body: JSON.stringify(payload),
   });
 }
 

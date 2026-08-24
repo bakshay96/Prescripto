@@ -85,3 +85,12 @@ def root():
         "graphql": "/graphql",
         "version": settings.VERSION,
     }
+
+
+@app.get("/admin")
+@app.get("/admin/")
+def admin_root_redirect():
+    """Redirect direct /admin/ requests to the API v1 admin hospitals endpoint."""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/api/v1/admin/hospitals")
+

@@ -5,6 +5,7 @@ import { ThemeProvider, useTheme, THEMES } from "../components/ThemeContext";
 import UtilityBar from "../components/UtilityBar";
 import { GlobalTransliterationFAB } from "../components/GlobalTransliterationFAB";
 import SalesBroadcastBanner from "../components/SalesBroadcastBanner";
+import RealtimeNotificationPanel from "../components/RealtimeNotificationPanel";
 import "../style.css";
 
 /**
@@ -59,6 +60,8 @@ export default function App({ Component, pageProps }: AppProps) {
       <Component {...pageProps} />
       {/* Global Transliteration FAB — visible on every page */}
       <GlobalTransliterationFAB />
+      {/* Global Realtime Sound & Notification Panel */}
+      <RealtimeNotificationPanel />
     </ThemeProvider>
   );
 }

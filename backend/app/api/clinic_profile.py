@@ -101,7 +101,7 @@ def update_clinic_profile(
     data: ClinicProfileUpdate,
     current_user: dict = Depends(get_current_user),
 ):
-    """Update clinic prescription profile fields."""
+    """Update clinic prescription profile fields and sync across user & clinic records."""
     db = get_db()
     clinic_id = get_clinic_id(current_user)
     profile = _get_or_create_profile(clinic_id, db)
@@ -113,5 +113,35 @@ def update_clinic_profile(
         {"clinic_id": clinic_id},
         {"$set": updates}
     )
+
+    # Sync updated doctor name to users table
+    if data.doctor_name_en and data.doctor_name_en.strip():
+        db["users"].update_many(
+            {"clinic_id": clinic_id, "role": {"$in": ["DOCTOR", "CLINIC_ADMIN"]}},
+            {"$set": {"full_name": data.doctor_name_en, "name": data.doctor_name_en}}
+        )
+        if current_user.get("_id"):
+            db["users"].update_one(
+                {"_id": current_user["_id"]},
+                {"$set": {"full_name": data.doctor_name_en, "name": data.doctor_name_en}}
+            )
+
+    # Sync updated hospital name & phone to clinics table
+    clinic_updates = {}
+    if data.hospital_name_en and data.hospital_name_en.strip():
+        clinic_updates["name"] = data.hospital_name_en
+        clinic_updates["hospital_name"] = data.hospital_name_en
+    if data.doctor_name_en and data.doctor_name_en.strip():
+        clinic_updates["owner_name"] = data.doctor_name_en
+        clinic_updates["doctor_name"] = data.doctor_name_en
+    if data.phone and data.phone.strip():
+        clinic_updates["phone"] = data.phone
+
+    if clinic_updates:
+        db["clinics"].update_one(
+            {"_id": clinic_id},
+            {"$set": clinic_updates}
+        )
+
     updated = db["clinic_profiles"].find_one({"clinic_id": clinic_id})
     return _format_profile(updated)

@@ -111,16 +111,22 @@ def list_hospitals(
         bills = list(db["pharmacy_bills"].find({"clinic_id": cid}))
         total_revenue = sum(float(b.get("grand_total", b.get("total_amount", 0))) for b in bills)
 
+        # Clinic Profile info
+        prof = db["clinic_profiles"].find_one({"clinic_id": cid})
+
         # Owner user info
         owner = db["users"].find_one({"clinic_id": cid, "role": {"$in": ["CLINIC_ADMIN", "DOCTOR"]}}) or db["users"].find_one({"clinic_id": cid})
+        owner_name = (prof.get("doctor_name_en") if prof and prof.get("doctor_name_en") else None) or (owner.get("full_name") if owner else None) or (owner.get("name") if owner else None) or clinic.get("owner_name", "Doctor / Admin")
+        hospital_name = (prof.get("hospital_name_en") if prof and prof.get("hospital_name_en") else None) or clinic.get("name", "Hospital")
+
         owner_info = None
-        if owner:
+        if owner or prof:
             owner_info = {
-                "name": owner.get("full_name", owner.get("name", "Doctor / Admin")),
-                "email": owner.get("email", clinic.get("email", "")),
-                "phone": owner.get("phone", clinic.get("phone", "")),
-                "role": owner.get("role", "DOCTOR"),
-                "registration_number": owner.get("registration_number", clinic.get("registration_number", "")),
+                "name": owner_name,
+                "email": (owner.get("email") if owner else None) or clinic.get("email", ""),
+                "phone": (prof.get("phone") if prof and prof.get("phone") else None) or (owner.get("phone") if owner else None) or clinic.get("phone", ""),
+                "role": owner.get("role", "DOCTOR") if owner else "DOCTOR",
+                "registration_number": (prof.get("reg_number") if prof and prof.get("reg_number") else None) or clinic.get("registration_number", ""),
             }
 
         # Calculate dates
@@ -140,9 +146,9 @@ def list_hospitals(
 
         row = {
             "id": cid,
-            "name": clinic.get("name", ""),
-            "name_mr": clinic.get("name_mr", ""),
-            "address": clinic.get("address", ""),
+            "name": hospital_name,
+            "name_mr": (prof.get("hospital_name_mr") if prof else None) or clinic.get("name_mr", ""),
+            "address": (prof.get("address") if prof and prof.get("address") else None) or clinic.get("address", ""),
             "phone": clinic.get("phone", ""),
             "email": clinic.get("email", ""),
             "registration_number": clinic.get("registration_number", ""),
