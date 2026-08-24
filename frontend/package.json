@@ -4,7 +4,7 @@
   "description": "Prescripto Doctor Prescription & Pharmacy Management Frontend Web Application",
   "scripts": {
     "dev": "next dev",
-    "build": "next build || echo Frontend Build Ready for Deployment",
+    "build": "next build",
     "start": "next start || npx -y serve .",
     "serve": "npx -y serve .",
     "lint": "next lint"

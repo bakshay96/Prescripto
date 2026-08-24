@@ -1,8 +1,8 @@
-# Netlify Configuration for Prescripto Frontend Deployment
+# Prescripto Frontend Netlify Configuration
 
 [build]
-  base = "frontend"
-  publish = "."
+  command = "npm run build"
+  publish = "out"
 
 [build.environment]
   NODE_VERSION = "20"
