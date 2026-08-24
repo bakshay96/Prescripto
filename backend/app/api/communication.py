@@ -72,6 +72,10 @@ def list_messages(current_user: dict = Depends(get_current_user)):
     return result
 
 
+import asyncio
+from app.core.websocket import ws_manager
+
+
 @router.post("/messages")
 def send_message(data: MessageCreate, current_user: dict = Depends(get_current_user)):
     """Send a new message between Doctor OPD and Medical Shop."""
@@ -97,7 +101,24 @@ def send_message(data: MessageCreate, current_user: dict = Depends(get_current_u
     }
 
     db["communication_messages"].insert_one(msg_doc)
-    
+
+    # Trigger real-time WebSocket broadcast to all active clinic clients
+    try:
+        ws_payload = {
+            "event": "chat_message",
+            "title": f"💬 Message from {msg_doc['sender_name']}",
+            "message": msg_doc["message"],
+            "target_clinic_id": clinic_id,
+            "priority": msg_doc["priority"],
+        }
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(ws_manager.broadcast(ws_payload))
+        except RuntimeError:
+            asyncio.run(ws_manager.broadcast(ws_payload))
+    except Exception:
+        pass
+
     return {
         "id": msg_doc["_id"],
         "clinic_id": clinic_id,
@@ -111,3 +132,23 @@ def send_message(data: MessageCreate, current_user: dict = Depends(get_current_u
         "priority": msg_doc["priority"],
         "created_at": now,
     }
+
+
+@router.delete("/messages")
+def clear_all_messages(current_user: dict = Depends(get_current_user)):
+    """Clear all chat messages for the clinic."""
+    db = get_db()
+    clinic_id = get_clinic_id(current_user)
+    result = db["communication_messages"].delete_many({"clinic_id": clinic_id})
+    return {"message": "Chat history cleared successfully.", "deleted_count": result.deleted_count}
+
+
+@router.delete("/messages/{message_id}")
+def delete_single_message(message_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a single chat message."""
+    db = get_db()
+    clinic_id = get_clinic_id(current_user)
+    res = db["communication_messages"].delete_one({"_id": message_id, "clinic_id": clinic_id})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Message not found.")
+    return {"message": "Message deleted successfully."}

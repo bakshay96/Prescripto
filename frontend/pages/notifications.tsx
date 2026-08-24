@@ -416,7 +416,7 @@ function NotificationsHubContent() {
 
 export default function NotificationsHubPage() {
   return (
-    <RoleGuard allowedRoles={["DOCTOR", "MASTER_ADMIN"]}>
+    <RoleGuard allowedRoles={["DOCTOR", "PHARMACIST", "MASTER_ADMIN"]}>
       <NotificationsHubContent />
     </RoleGuard>
   );

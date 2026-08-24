@@ -38,6 +38,8 @@ export default function UtilityBar() {
   const [userOpen, setUserOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<StoredUser | null>(null);
+  const [visible, setVisible] = useState(true);
+  const lastScrollY = useRef(0);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -45,6 +47,16 @@ export default function UtilityBar() {
     setMounted(true);
     const syncUser = () => setUser(getUser());
     syncUser();
+
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      if (currentY > 40 && currentY > lastScrollY.current) {
+        setVisible(false);
+      } else {
+        setVisible(true);
+      }
+      lastScrollY.current = currentY;
+    };
 
     // Auto-close dropdown when clicking outside
     const handleClickOutside = (event: MouseEvent) => {
@@ -54,11 +66,13 @@ export default function UtilityBar() {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("storage", syncUser);
     window.addEventListener("auth-change", syncUser);
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("storage", syncUser);
       window.removeEventListener("auth-change", syncUser);
     };
@@ -152,7 +166,7 @@ export default function UtilityBar() {
           color: "#90caf9",
           fontSize: 10,
           fontFamily: "'Inter', sans-serif",
-          transform: isFullViewMode ? "translateY(-100%)" : "translateY(0)",
+          transform: isFullViewMode || !visible ? "translateY(-100%)" : "translateY(0)",
           transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         }}
       >
@@ -266,7 +280,7 @@ export default function UtilityBar() {
           backdropFilter: "blur(16px)",
           fontFamily: "'Inter','Noto Sans Devanagari',Arial,sans-serif",
           fontSize: `${13 * fontSizeScale}px`,
-          transform: isFullViewMode ? "translateY(-100%)" : "translateY(0)",
+          transform: isFullViewMode || !visible ? "translateY(-100%)" : "translateY(0)",
           transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), top 0.3s ease",
         }}
       >

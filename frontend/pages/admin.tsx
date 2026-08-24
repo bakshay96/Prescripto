@@ -5,6 +5,7 @@ import { useTheme } from "../components/ThemeContext";
 import RoleGuard from "../components/RoleGuard";
 import { TransliteratedInput, TransliteratedTextArea } from "../components/TransliteratedInput";
 import VerticalSidebarNav from "../components/VerticalSidebarNav";
+import CountUpNumber from "../components/CountUpNumber";
 import {
   getUser,
   getAdminAnalytics,
@@ -387,7 +388,9 @@ function AdminContent() {
                         METRIC
                       </span>
                     </div>
-                    <div style={{ fontSize: 32, fontWeight: 900, color: theme.text, lineHeight: 1 }}>{card.value}</div>
+                    <div style={{ fontSize: 32, fontWeight: 900, color: theme.text, lineHeight: 1 }}>
+                      <CountUpNumber end={card.value} />
+                    </div>
                     <div style={{ fontSize: 13, fontWeight: 800, color: theme.text }}>{card.label}</div>
                     <div style={{ fontSize: 11, color: theme.textMuted }}>{card.sub}</div>
                   </div>

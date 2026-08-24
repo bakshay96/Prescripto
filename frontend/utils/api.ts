@@ -630,6 +630,14 @@ export function sendCommMessage(data: {
   });
 }
 
+export function deleteCommMessage(id: string): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>(`/communication/messages/${id}`, { method: "DELETE" });
+}
+
+export function clearCommMessages(): Promise<{ message: string; deleted_count: number }> {
+  return apiFetch<{ message: string; deleted_count: number }>("/communication/messages", { method: "DELETE" });
+}
+
 // ── Persistent System Notifications & Alerts ────────────────────────────────
 
 export interface SystemApiNotification {

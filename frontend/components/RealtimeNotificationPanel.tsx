@@ -285,29 +285,36 @@ export default function RealtimeNotificationPanel() {
         {/* Notifications Slide-up Panel */}
         {panelOpen && (
           <div
-            className="absolute bottom-16 right-0 w-84 max-h-[440px] rounded-2xl border shadow-2xl overflow-hidden flex flex-col z-50 backdrop-blur-md"
+            className="absolute bottom-16 right-0 w-[92vw] sm:w-96 md:w-[440px] max-h-[580px] rounded-3xl border shadow-2xl overflow-hidden flex flex-col z-50 backdrop-blur-xl transition-all duration-300"
             style={{
-              background: isDark ? "#0f172a" : "#ffffff",
-              borderColor: isDark ? "#1e293b" : "#e2e8f0",
+              background: isDark ? "rgba(15,23,42,0.96)" : "rgba(255,255,255,0.98)",
+              borderColor: isDark ? "rgba(255,255,255,0.12)" : "#cbd5e1",
+              boxShadow: "0 25px 60px rgba(0,0,0,0.5)",
             }}
           >
-            <div className="p-3 border-b flex items-center justify-between" style={{ borderColor: isDark ? "#1e293b" : "#e2e8f0" }}>
+            <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e2e8f0" }}>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-black" style={{ color: theme.text }}>🔔 Live Alerts &amp; Vitals</span>
-                <span className={`w-2 h-2 rounded-full ${wsConnected ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} title={wsConnected ? "WebSocket Connected" : "Connecting..."} />
+                <span className="text-base font-black" style={{ color: theme.text }}>🔔 Live Alerts &amp; Vitals</span>
+                <span className={`w-2.5 h-2.5 rounded-full ${wsConnected ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} title={wsConnected ? "WebSocket Connected" : "Connecting..."} />
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
+                <a
+                  href="/notifications"
+                  className="text-xs font-black text-sky-400 hover:underline"
+                >
+                  Full Hub →
+                </a>
                 <button
                   type="button"
                   onClick={markAllAsRead}
-                  className="text-[10px] font-bold text-sky-400 hover:underline"
+                  className="text-xs font-bold text-amber-500 hover:underline"
                 >
                   Mark read
                 </button>
                 <button
                   type="button"
                   onClick={() => setPanelOpen(false)}
-                  className="text-xs font-black text-slate-400"
+                  className="text-sm font-black text-slate-400 hover:text-white"
                 >
                   ✕
                 </button>

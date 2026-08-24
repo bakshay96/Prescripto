@@ -13,8 +13,15 @@ import {
   Medicine as ApiMedicine,
   getUser,
   PharmacyBillResponse,
+  listCommMessages,
+  sendCommMessage,
+  deleteCommMessage,
+  clearCommMessages,
+  CommMessage,
 } from "../utils/api";
 import { useTheme } from "./ThemeContext";
+import CountUpNumber from "./CountUpNumber";
+import { playNotificationSound } from "./RealtimeNotificationPanel";
 
 export type DosageForm = "Tablet" | "Capsule" | "Syrup" | "Injection" | "Ointment" | "Drops";
 export type UserRole = "PHARMACIST" | "DOCTOR_ADMIN" | "DOCTOR";
@@ -100,9 +107,81 @@ export function InventoryDashboard({
   const [internalDark, setInternalDark] = useState(true);
   const { themeId, isFullViewMode, toggleFullViewMode } = useTheme();
   const isDarkMode = themeId !== "light";
-  const [activeTab, setActiveTab] = useState<"inventory" | "categories" | "otc_billing" | "dispense" | "alerts" | "analytics" | "profile" | "history">("inventory");
+  const [activeTab, setActiveTab] = useState<"inventory" | "categories" | "otc_billing" | "dispense" | "doctor_chat" | "alerts" | "analytics" | "profile" | "history">("inventory");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Doctor OPD Communication Chat State
+  const [chatMessages, setChatMessages] = useState<CommMessage[]>([]);
+  const [chatInputText, setChatInputText] = useState("");
+  const [chatPriority, setChatPriority] = useState("NORMAL");
+  const [chatPatientName, setChatPatientName] = useState("");
+  const [chatRxNumber, setChatRxNumber] = useState("");
+  const [loadingChat, setLoadingChat] = useState(false);
+  const [sendingChat, setSendingChat] = useState(false);
+  const [floatingChatOpen, setFloatingChatOpen] = useState(false);
+
+  const loadChatMessages = async () => {
+    try {
+      const data = await listCommMessages();
+      setChatMessages(data);
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    loadChatMessages();
+    const interval = setInterval(loadChatMessages, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleSendChat = async (presetText?: string) => {
+    const textToSend = presetText || chatInputText;
+    if (!textToSend.trim()) return;
+
+    setSendingChat(true);
+    try {
+      const sent = await sendCommMessage({
+        message: textToSend.trim(),
+        recipient_role: "DOCTOR",
+        patient_name: chatPatientName.trim() || undefined,
+        prescription_id: chatRxNumber.trim() || undefined,
+        priority: chatPriority,
+      });
+
+      setChatMessages((prev) => [sent, ...prev]);
+      setChatInputText("");
+      setChatPatientName("");
+      setChatRxNumber("");
+
+      playNotificationSound("chime");
+    } catch {
+      // ignore
+    } finally {
+      setSendingChat(false);
+    }
+  };
+
+  const handleDeleteSingleChat = async (msgId: string) => {
+    if (!confirm("Are you sure you want to delete this chat message?")) return;
+    try {
+      await deleteCommMessage(msgId);
+      setChatMessages((prev) => prev.filter((m) => m.id !== msgId));
+    } catch {
+      alert("Failed to delete message.");
+    }
+  };
+
+  const handleClearAllChats = async () => {
+    if (!confirm("⚠️ Are you sure you want to clear ALL chat history for this clinic? This cannot be undone.")) return;
+    try {
+      await clearCommMessages();
+      setChatMessages([]);
+    } catch {
+      alert("Failed to clear chat history.");
+    }
+  };
 
   // Billing History State
   const [billingHistoryList, setBillingHistoryList] = useState<any[]>([]);
@@ -368,6 +447,11 @@ export function InventoryDashboard({
     loadStoreInventory();
     loadPendingPrescriptions();
 
+    // Auto-poll live doctor OPD prescriptions every 4 seconds
+    const rxInterval = setInterval(() => {
+      loadPendingPrescriptions();
+    }, 4000);
+
     const handleSaved = () => {
       loadStoreInventory();
       loadPendingPrescriptions();
@@ -375,7 +459,10 @@ export function InventoryDashboard({
 
     if (typeof window !== "undefined") {
       window.addEventListener("prescription-saved", handleSaved);
-      return () => window.removeEventListener("prescription-saved", handleSaved);
+      return () => {
+        clearInterval(rxInterval);
+        window.removeEventListener("prescription-saved", handleSaved);
+      };
     }
   }, [loadStoreInventory, loadPendingPrescriptions]);
 
@@ -655,6 +742,7 @@ export function InventoryDashboard({
                 { id: "categories", label: "Category Manager", icon: "🏷️", count: categories.filter((c) => c !== "ALL").length, badgeColor: "ux4g-badge-saffron" },
                 { id: "otc_billing", label: "OTC Billing Desk", icon: "🛒", badgeColor: "ux4g-badge-green" },
                 { id: "dispense", label: "Prescription Desk", icon: "📋", count: pendingPrescriptions.length, badgeColor: "ux4g-badge-blue" },
+                { id: "doctor_chat", label: "Doctor OPD Chat", icon: "💬", count: chatMessages.length || undefined, badgeColor: "ux4g-badge-saffron" },
                 { id: "alerts", label: "Stock & Expiry Alerts", icon: "📦", count: lowStockCount, badgeColor: "ux4g-badge-red" },
                 { id: "analytics", label: "Revenue Analytics", icon: "📊", badgeColor: "ux4g-badge-amber" },
                 { id: "history", label: "Billing History", icon: "📑", count: billingHistoryList.length || undefined, badgeColor: "ux4g-badge-green" },
@@ -722,25 +810,33 @@ export function InventoryDashboard({
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className={`p-5 rounded-2xl border ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"}`}>
                 <div className={`text-xs font-semibold ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Total Medicines</div>
-                <div className={`text-2xl font-black mt-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{totalItems}</div>
+                <div className={`text-2xl font-black mt-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                  <CountUpNumber end={totalItems} />
+                </div>
                 <div className={`text-[10px] mt-1 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Active inventory items</div>
               </div>
 
               <div className={`p-5 rounded-2xl border ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"}`}>
                 <div className="text-xs font-semibold text-amber-500">Low Stock Alerts</div>
-                <div className="text-2xl font-black mt-1 text-amber-500">{lowStockCount}</div>
+                <div className="text-2xl font-black mt-1 text-amber-500">
+                  <CountUpNumber end={lowStockCount} />
+                </div>
                 <div className="text-[10px] text-amber-600/80 mt-1">Requires restock soon</div>
               </div>
 
               <div className={`p-5 rounded-2xl border ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"}`}>
                 <div className="text-xs font-semibold text-rose-500">Out of Stock</div>
-                <div className="text-2xl font-black mt-1 text-rose-500">{outOfStockCount}</div>
+                <div className="text-2xl font-black mt-1 text-rose-500">
+                  <CountUpNumber end={outOfStockCount} />
+                </div>
                 <div className="text-[10px] text-rose-600/80 mt-1">Unavailable for prescriptions</div>
               </div>
 
               <div className={`p-5 rounded-2xl border ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"}`}>
                 <div className="text-xs font-semibold text-emerald-600">Total Valuation</div>
-                <div className="text-2xl font-black mt-1 text-emerald-600">₹{totalValuation.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</div>
+                <div className="text-2xl font-black mt-1 text-emerald-600">
+                  <CountUpNumber end={totalValuation} prefix="₹" decimals={2} />
+                </div>
                 <div className="text-[10px] text-emerald-700/80 mt-1">Based on unit price</div>
               </div>
             </div>
@@ -1170,6 +1266,195 @@ export function InventoryDashboard({
                 </button>
               </div>
             </form>
+          </div>
+        )}
+
+        {/* TAB: DOCTOR OPD COMMUNICATION CHAT DESK */}
+        {activeTab === "doctor_chat" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">💬</span>
+                  <h2 className="text-lg font-black tracking-tight" style={{ color: isDarkMode ? "#ffffff" : "#0f172a" }}>
+                    Doctor OPD &amp; Pharmacy Communication Desk
+                  </h2>
+                  <span className="ux4g-badge ux4g-badge-gov">REALTIME WEBSOCKET SYNC</span>
+                </div>
+                <p className={`text-xs mt-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                  Direct 2-way real-time messaging, drug availability inquiries, and prescription verification with Hospital Doctors.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setChatInputText("");
+                    setChatPatientName("");
+                    setChatRxNumber("");
+                    setChatPriority("NORMAL");
+                  }}
+                  className="ux4g-btn ux4g-btn-saffron text-xs"
+                >
+                  ✨ Start Fresh Thread
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearAllChats}
+                  className="ux4g-btn ux4g-btn-red text-xs"
+                >
+                  🧹 Clear Chat History
+                </button>
+                <button type="button" onClick={loadChatMessages} className="ux4g-btn ux4g-btn-outline text-xs">
+                  🔄 Sync Messages
+                </button>
+              </div>
+            </div>
+
+            {/* Presets Bar */}
+            <div className="flex gap-2 flex-wrap">
+              {[
+                "✅ Paracetamol 650mg is available in Medical Store stock",
+                "⚠️ Amoxicillin Capsules out of stock — Substitute recommended",
+                "📜 Please confirm dosage instructions for Rx #",
+                "🚨 Emergency ICU Medicine Prepared & Ready for Pickup",
+              ].map((p, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleSendChat(p)}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-semibold hover:scale-[1.02] transition-transform ${
+                    isDarkMode ? "bg-slate-900 border-slate-800 text-slate-200" : "bg-slate-100 border-slate-200 text-slate-800"
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+
+            {/* Chat Thread Box */}
+            <div
+              className={`rounded-2xl border p-4 flex flex-col justify-between space-y-4 min-h-[420px] ${
+                isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"
+              }`}
+            >
+              <div className="flex-1 overflow-y-auto space-y-3 max-h-[400px] pr-2">
+                {chatMessages.length === 0 ? (
+                  <div className="p-12 text-center text-xs font-bold text-slate-400">
+                    No previous chat messages with Hospital Doctors. Send a message below to start 2-way communication!
+                  </div>
+                ) : (
+                  chatMessages.slice().reverse().map((m) => {
+                    const isPharmacistMsg = m.sender_role === "PHARMACIST";
+                    return (
+                      <div
+                        key={m.id}
+                        className={`flex flex-col ${isPharmacistMsg ? "items-end" : "items-start"}`}
+                      >
+                        <div
+                          className={`max-w-md p-3.5 rounded-2xl text-xs space-y-1 shadow-sm ${
+                            isPharmacistMsg
+                              ? "bg-amber-500 text-slate-950 font-semibold rounded-tr-none"
+                              : "bg-slate-800 text-white rounded-tl-none border border-slate-700"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-4 text-[10px] font-black opacity-90 border-b border-black/10 pb-1">
+                            <span>{m.sender_name} ({m.sender_role})</span>
+                            <span>{new Date(m.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
+                          </div>
+
+                          {m.patient_name && (
+                            <div className="text-[10px] font-bold bg-black/20 px-2 py-0.5 rounded-md inline-block">
+                              👤 Patient: {m.patient_name} {m.prescription_id ? `· Rx: ${m.prescription_id}` : ""}
+                            </div>
+                          )}
+
+                          <div className="font-bold text-xs leading-relaxed">
+                            {m.message}
+                          </div>
+
+                          <div className="pt-1 flex items-center justify-between gap-4 border-t border-black/10">
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteSingleChat(m.id)}
+                              className="text-[10px] font-extrabold opacity-75 hover:opacity-100 hover:underline text-rose-300 flex items-center gap-1"
+                              title="Delete message"
+                            >
+                              <span>🗑️ Delete</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setChatInputText(`Re: ${m.message}`);
+                                if (m.patient_name) setChatPatientName(m.patient_name);
+                                if (m.prescription_id) setChatRxNumber(m.prescription_id);
+                              }}
+                              className="text-[10px] font-extrabold opacity-90 hover:opacity-100 hover:underline flex items-center gap-1"
+                            >
+                              <span>💬 Quick Reply</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Composer */}
+              <div className="pt-3 border-t space-y-2 border-slate-800">
+                <div className="flex gap-2 flex-wrap text-xs">
+                  <input
+                    type="text"
+                    placeholder="Patient Name (Optional)"
+                    value={chatPatientName}
+                    onChange={(e) => setChatPatientName(e.target.value)}
+                    className={`ux4g-input flex-1 ${isDarkMode ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`}
+                    style={{ fontSize: 11, padding: "6px 10px" }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Rx # (Optional)"
+                    value={chatRxNumber}
+                    onChange={(e) => setChatRxNumber(e.target.value)}
+                    className={`ux4g-input w-32 ${isDarkMode ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`}
+                    style={{ fontSize: 11, padding: "6px 10px" }}
+                  />
+                  <select
+                    value={chatPriority}
+                    onChange={(e) => setChatPriority(e.target.value)}
+                    className={`ux4g-input w-32 ${isDarkMode ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`}
+                    style={{ fontSize: 11, padding: "6px 10px" }}
+                  >
+                    <option value="NORMAL">Normal</option>
+                    <option value="URGENT">⚠️ Urgent</option>
+                    <option value="EMERGENCY">🚨 Emergency</option>
+                  </select>
+                </div>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Type message to Hospital Doctor OPD…"
+                    value={chatInputText}
+                    onChange={(e) => setChatInputText(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSendChat()}
+                    className={`ux4g-input flex-1 ${isDarkMode ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`}
+                    style={{ fontSize: 12, padding: "8px 12px" }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleSendChat()}
+                    disabled={sendingChat || !chatInputText.trim()}
+                    className="ux4g-btn ux4g-btn-saffron px-6"
+                  >
+                    {sendingChat ? "Sending…" : "✉️ Send Message"}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

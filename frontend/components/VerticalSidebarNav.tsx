@@ -17,7 +17,7 @@ export interface NavItem {
 }
 
 interface VerticalSidebarNavProps {
-  mode: "DOCTOR" | "ADMIN";
+  mode: "DOCTOR" | "PHARMACIST" | "ADMIN";
   activeTab?: string;
   onTabSelect?: (tabId: string) => void;
   onSubscriptionClick?: () => void;
@@ -81,6 +81,12 @@ export default function VerticalSidebarNav({
     { id: "subscription", label: lang === "mr" ? "सबस्क्रिप्शन" : "Subscription & Payment", icon: "💳", href: "/billing", onClick: onSubscriptionClick },
   ];
 
+  const pharmacistItems: NavItem[] = [
+    { id: "inventory", label: lang === "mr" ? "औषध साठा व बिलिंग" : "Inventory & Billing Desk", icon: "📦", href: "/inventory" },
+    { id: "messages", label: lang === "mr" ? "डॉक्टर संवाद चॅट" : "Doctor-Pharmacy Chat", icon: "💬", href: "/doctor/messages" },
+    { id: "notifications", label: lang === "mr" ? "सूचना व अपडेट्स" : "Notifications & Alerts", icon: "🔔", href: "/notifications" },
+  ];
+
   const adminItems: NavItem[] = [
     { id: "overview", label: "System Analytics", icon: "📊", badge: adminBadges?.hospitals ? `${adminBadges.hospitals} Hosp` : null, badgeColor: "ux4g-badge-gov" },
     { id: "hospitals", label: "Hospitals & Stores", icon: "🏥", badge: adminBadges?.hospitals, badgeColor: "ux4g-badge-saffron" },
@@ -92,7 +98,7 @@ export default function VerticalSidebarNav({
     { id: "queries", label: "Support Desk", icon: "💬", badge: adminBadges?.queries, badgeColor: "ux4g-badge-red" },
   ];
 
-  const navItems = mode === "DOCTOR" ? doctorItems : adminItems;
+  const navItems = mode === "DOCTOR" ? doctorItems : mode === "PHARMACIST" ? pharmacistItems : adminItems;
 
   return (
     <>
@@ -314,7 +320,7 @@ export default function VerticalSidebarNav({
                 </div>
               );
 
-              if (mode === "DOCTOR" && item.href && !item.onClick) {
+              if ((mode === "DOCTOR" || mode === "PHARMACIST") && item.href && !item.onClick) {
                 return (
                   <Link key={item.id} href={item.href} style={{ textDecoration: "none" }} onClick={() => setMobileOpen(false)}>
                     {itemEl}
