@@ -7,6 +7,7 @@ import {
   autocompleteMedicines,
   createPrescription,
   getPrintUrl,
+  sendWhatsAppPrescription,
   Patient as ApiPatient,
   MedicineAutocomplete,
   RxItem,
@@ -410,6 +411,17 @@ export default function PrescriptionWriter({
   const [lang, setLang] = useState<"mr" | "en" | "hi">("mr");
   const [rows, setRows] = useState<RxRow[]>([newRow()]);
 
+  // Follow-up & WhatsApp Delivery Gateway state
+  const [followupDays, setFollowupDays] = useState<number>(7);
+  const [customFollowupDate, setCustomFollowupDate] = useState<string>("");
+  const [sendWhatsApp, setSendWhatsApp] = useState<boolean>(true);
+  const [whatsappModalData, setWhatsappModalData] = useState<{
+    url: string;
+    phone: string;
+    patientName: string;
+    rxNum: string;
+  } | null>(null);
+
   const [showAddPatient, setShowAddPatient] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -561,10 +573,21 @@ export default function PrescriptionWriter({
         };
       });
 
+      // Calculate follow-up date
+      let calculatedFollowupDate: string | null = null;
+      if (followupDays > 0) {
+        const d = new Date();
+        d.setDate(d.getDate() + followupDays);
+        calculatedFollowupDate = d.toISOString().split("T")[0];
+      } else if (customFollowupDate) {
+        calculatedFollowupDate = customFollowupDate;
+      }
+
       const payload: any = {
         diagnosis,
         notes,
         items: itemsPayload,
+        followup_date: calculatedFollowupDate,
       };
 
       if (selectedPatientId) {
@@ -589,6 +612,29 @@ export default function PrescriptionWriter({
       // Synchronously notify all components and tabs of real-time update
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("prescription-saved", { detail: createdRx }));
+      }
+
+      // WhatsApp Delivery Gateway Trigger
+      const patientPhone = selectedPatient?.phone || "9876543210";
+      const patientName = selectedPatient ? selectedPatient.name : (patientSearch || "Patient");
+
+      if (sendWhatsApp && createdRx?.id) {
+        try {
+          const waRes = await sendWhatsAppPrescription({
+            prescription_id: createdRx.id,
+            phone: patientPhone,
+            patient_name: patientName,
+            language: lang,
+          });
+          setWhatsappModalData({
+            url: waRes.whatsapp_url,
+            phone: waRes.phone,
+            patientName,
+            rxNum: createdRx.prescription_number,
+          });
+        } catch {
+          // ignore
+        }
       }
 
       const printUrl = getPrintUrl(createdRx.id, lang);
@@ -874,6 +920,46 @@ export default function PrescriptionWriter({
             </select>
           </div>
         </div>
+
+        {/* Follow-up Date & WhatsApp Delivery Options */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t" style={{ borderColor: isDark ? "#334155" : "#e2e8f0" }}>
+          <div>
+            <label className={labelClass}>📅 OPD Follow-up Date / फॉलो-अप तारीख</label>
+            <div className="flex gap-2">
+              <select
+                value={followupDays}
+                onChange={(e) => setFollowupDays(Number(e.target.value))}
+                className={inputClass}
+              >
+                <option value={3}>3 Days (3 दिवस)</option>
+                <option value={7}>7 Days (1 आठवडा)</option>
+                <option value={14}>14 Days (2 आठवडे)</option>
+                <option value={30}>30 Days (1 महिना)</option>
+                <option value={0}>Custom Date / No Followup</option>
+              </select>
+              {followupDays === 0 && (
+                <input
+                  type="date"
+                  value={customFollowupDate}
+                  onChange={(e) => setCustomFollowupDate(e.target.value)}
+                  className={inputClass}
+                />
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center pt-5">
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-emerald-500 bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/30 w-full">
+              <input
+                type="checkbox"
+                checked={sendWhatsApp}
+                onChange={(e) => setSendWhatsApp(e.target.checked)}
+                className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
+              />
+              <span>📱 Send Digital Rx link via WhatsApp to Patient</span>
+            </label>
+          </div>
+        </div>
       </div>
 
       {/* ── Medicines Table Multi-Theme Container ── */}
@@ -1148,6 +1234,55 @@ export default function PrescriptionWriter({
           }}
           onClose={() => setShowAddPatient(false)}
         />
+      )}
+
+      {whatsappModalData && (
+        <div className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className={`p-6 rounded-2xl border shadow-2xl max-w-md w-full space-y-4 ${
+            isDark ? "bg-slate-900 border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-black text-emerald-500 flex items-center gap-2">
+                <span>📱 WhatsApp Prescription Gateway</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setWhatsappModalData(null)}
+                className="text-xs font-black text-slate-400 hover:text-slate-200"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="text-xs space-y-2 leading-relaxed">
+              <p>
+                Digital prescription link for <strong>{whatsappModalData.patientName}</strong> (Rx #{whatsappModalData.rxNum}) has been prepared.
+              </p>
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-[11px] break-all">
+                {whatsappModalData.url}
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setWhatsappModalData(null)}
+                className="px-4 py-2 rounded-xl border text-xs font-bold text-slate-300 hover:bg-slate-800"
+              >
+                Close
+              </button>
+              <a
+                href={whatsappModalData.url}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setWhatsappModalData(null)}
+                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/20"
+              >
+                <span>🚀 Launch WhatsApp Web Chat</span>
+              </a>
+            </div>
+          </div>
+        </div>
       )}
       </div>{/* end left form */}
 

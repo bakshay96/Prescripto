@@ -11,6 +11,7 @@ from app.api.payments import router as payments_router
 from app.api.communication import router as communication_router
 from app.api.notifications import router as notifications_router
 from app.api.ws import router as ws_router
+from app.api.messaging import router as messaging_router
 
 api_router = APIRouter()
 api_router.include_router(auth_router)
@@ -25,3 +26,4 @@ api_router.include_router(payments_router)
 api_router.include_router(communication_router)
 api_router.include_router(notifications_router)
 api_router.include_router(ws_router)
+api_router.include_router(messaging_router)

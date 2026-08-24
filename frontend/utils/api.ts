@@ -161,6 +161,7 @@ export interface Patient {
   status?: "ACTIVE" | "BANNED" | "SUSPENDED";
   is_banned?: boolean;
   ban_reason?: string | null;
+  created_at?: string;
   age: { years: number; months: number; days: number; formatted: string };
 }
 
@@ -214,6 +215,30 @@ export function deletePatientHistory(patientId: string): Promise<{ message: stri
   return apiFetch<{ message: string; deleted_count: number }>(`/patients/${patientId}/history`, {
     method: "DELETE",
   });
+}
+
+export interface PatientHistoryItem {
+  id: string;
+  prescription_number: string;
+  doctor_name: string;
+  diagnosis: string;
+  chief_complaints: string;
+  vitals?: any;
+  medicines: any[];
+  advice?: string;
+  date: string;
+}
+
+export interface PatientHistoryResponse {
+  patient: Patient;
+  total_visits: number;
+  history: PatientHistoryItem[];
+}
+
+export type PatientHistoryRecord = PatientHistoryResponse;
+
+export function getPatientHistory(patientId: string): Promise<PatientHistoryResponse> {
+  return apiFetch<PatientHistoryResponse>(`/patients/${patientId}/history`);
 }
 
 export async function listPatientsMongo(search?: string): Promise<Patient[]> {
@@ -663,6 +688,48 @@ export function triggerWsBroadcastApi(payload: {
   });
 }
 
+// ── Patient WhatsApp & Follow-Up Reminders Gateway ──────────────────────────
+
+export interface FollowupRecord {
+  prescription_id: string;
+  prescription_number: string;
+  patient_name: string;
+  phone: string;
+  diagnosis: string;
+  followup_date: string;
+  is_due_today: boolean;
+  status: string;
+}
+
+export function sendWhatsAppPrescription(data: {
+  prescription_id: string;
+  phone: string;
+  patient_name: string;
+  language?: string;
+}): Promise<{ message: string; whatsapp_url: string; phone: string; prescription_number: string }> {
+  return apiFetch("/messaging/send-whatsapp", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function listUpcomingFollowups(): Promise<FollowupRecord[]> {
+  return apiFetch<FollowupRecord[]>("/messaging/upcoming-followups");
+}
+
+export function sendFollowupReminder(data: {
+  prescription_id: string;
+  phone: string;
+  patient_name: string;
+  followup_date: string;
+  language?: string;
+}): Promise<{ message: string; whatsapp_url: string; phone: string; followup_date: string }> {
+  return apiFetch("/messaging/send-followup-reminder", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
 // ── Payments & Razorpay Subscription ─────────────────────────────────────────
 
 export interface RazorpayOrderResponse {
@@ -774,26 +841,6 @@ export interface PlatformAnnouncement {
 
 export function getPlatformAnnouncements(): Promise<PlatformAnnouncement> {
   return apiFetch<PlatformAnnouncement>("/payments/announcements");
-}
-
-export interface PatientHistoryRecord {
-  patient: Patient;
-  total_visits: number;
-  history: Array<{
-    id: string;
-    prescription_number: string;
-    doctor_name: string;
-    diagnosis: string;
-    chief_complaints: string;
-    vitals: any;
-    medicines: any[];
-    advice: string;
-    date: string;
-  }>;
-}
-
-export function getPatientHistory(patientId: string): Promise<PatientHistoryRecord> {
-  return apiFetch<PatientHistoryRecord>(`/patients/${patientId}/history`);
 }
 
 export function searchPrescriptionByNumber(query: string): Promise<Prescription[]> {

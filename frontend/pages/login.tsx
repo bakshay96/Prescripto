@@ -199,80 +199,6 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* ═══ DEMO CREDENTIALS SECTION ═══ */}
-          <div style={{
-            marginBottom: 24,
-            padding: "16px",
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 16,
-          }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#64748b", letterSpacing: "1px", textTransform: "uppercase", marginBottom: 12, textAlign: "center" }}>
-              ⚡ One-Click Demo Login
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {DEMO_CREDENTIALS.map((cred) => (
-                <button
-                  key={cred.role}
-                  onClick={() => handleDemoLogin(cred)}
-                  disabled={demoLoading !== null || loading}
-                  style={{
-                    display: "flex", alignItems: "center",
-                    padding: "12px 16px",
-                    borderRadius: 12,
-                    border: `1px solid ${cred.border}`,
-                    background: demoLoading === cred.role ? cred.gradient : `${cred.glow}`,
-                    cursor: demoLoading !== null || loading ? "wait" : "pointer",
-                    gap: 12,
-                    transition: "all 0.2s",
-                    boxShadow: demoLoading === cred.role ? `0 4px 16px ${cred.glow}` : "none",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!demoLoading) {
-                      (e.currentTarget as HTMLElement).style.background = cred.gradient;
-                      (e.currentTarget as HTMLElement).style.boxShadow = `0 4px 16px ${cred.glow}`;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!demoLoading || demoLoading !== cred.role) {
-                      (e.currentTarget as HTMLElement).style.background = cred.glow;
-                      (e.currentTarget as HTMLElement).style.boxShadow = "none";
-                    }
-                  }}
-                >
-                  {demoLoading === cred.role ? (
-                    <div style={{
-                      width: 28, height: 28, borderRadius: "50%",
-                      border: "2px solid rgba(255,255,255,0.3)",
-                      borderTopColor: "white",
-                      animation: "spin 0.8s linear infinite",
-                      flexShrink: 0,
-                    }} />
-                  ) : (
-                    <span style={{ fontSize: 22, flexShrink: 0 }}>{cred.emoji}</span>
-                  )}
-                  <div style={{ flex: 1, textAlign: "left" }}>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: "white" }}>{cred.label}</div>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.6)", marginTop: 1 }}>{cred.description}</div>
-                  </div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: "monospace" }}>
-                    {demoLoading === cred.role ? "⏳" : "→"}
-                  </div>
-                </button>
-              ))}
-            </div>
-            <div style={{ textAlign: "center", marginTop: 12, fontSize: 10, color: "#334155" }}>
-              Backend: Active API • Mongo / Relational Ready
-            </div>
-          </div>
-
-          {/* Divider */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
-            <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>OR MANUAL LOGIN</span>
-            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
-          </div>
-
           {/* Tab Switcher */}
           <div style={{
             display: "grid", gridTemplateColumns: "1fr 1fr",
@@ -373,15 +299,62 @@ export default function LoginPage() {
             </form>
           )}
 
-          {/* Demo credential hints */}
-          <div style={{ marginTop: 20, padding: "12px 14px", background: "rgba(255,255,255,0.03)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)" }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#334155", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" }}>Demo Credentials</div>
-            {DEMO_CREDENTIALS.map((c) => (
-              <div key={c.role} style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 10 }}>
-                <span style={{ color: "#475569" }}>{c.emoji} {c.label}:</span>
-                <span style={{ color: "#64748b", fontFamily: "monospace" }}>{c.email} / {c.password}</span>
-              </div>
-            ))}
+          {/* ═══ SLEEK GHOST AUTO-LOGIN ICONS BAR ═══ */}
+          <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.06)", textAlign: "center" }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 12 }}>
+              ⚡ Quick Demo Auto-Login
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+              {DEMO_CREDENTIALS.map((cred) => (
+                <button
+                  key={cred.role}
+                  type="button"
+                  onClick={() => handleDemoLogin(cred)}
+                  disabled={demoLoading !== null || loading}
+                  title={`Auto-login as ${cred.label}`}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "8px 14px",
+                    borderRadius: 20,
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    color: "rgba(255,255,255,0.85)",
+                    fontSize: 11,
+                    fontWeight: 800,
+                    cursor: demoLoading !== null || loading ? "wait" : "pointer",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!demoLoading) {
+                      (e.currentTarget as HTMLElement).style.background = cred.glow;
+                      (e.currentTarget as HTMLElement).style.borderColor = cred.border;
+                      (e.currentTarget as HTMLElement).style.color = "white";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!demoLoading || demoLoading !== cred.role) {
+                      (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)";
+                      (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.12)";
+                      (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.85)";
+                    }
+                  }}
+                >
+                  {demoLoading === cred.role ? (
+                    <div style={{
+                      width: 12, height: 12, borderRadius: "50%",
+                      border: "2px solid rgba(255,255,255,0.3)",
+                      borderTopColor: "white",
+                      animation: "spin 0.8s linear infinite",
+                    }} />
+                  ) : (
+                    <span>{cred.emoji}</span>
+                  )}
+                  <span>{cred.label.replace(" Login", "")}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
