@@ -5,7 +5,7 @@ All data stored in MongoDB. Supports demo logins that auto-seed on first use.
 import uuid
 from typing import Optional
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, EmailStr
 
@@ -90,11 +90,11 @@ _DEMO_ROLES = {
 }
 
 _DEMO_NAMES = {
-    "doctor@prescripto.com":  "Dr. Vikas Va. Karande",
-    "pharma@prescripto.com":  "Suyog Pharmacy Admin",
+    "doctor@prescripto.com":  "Doctor",
+    "pharma@prescripto.com":  "Pharmacy Admin",
     "admin@prescripto.com":   "System Admin",
-    "doctor@suyog.com":       "Dr. Vikas Va. Karande",
-    "pharmacist@suyog.com":   "Suyog Pharmacy Admin",
+    "doctor@suyog.com":       "Doctor",
+    "pharmacist@suyog.com":   "Pharmacy Admin",
     "sarah.doc@livetest.com": "Dr. Sarah Jenkins",
     "dave.pharma@livetest.com": "Dave Miller (Pharmacist)",
 }
@@ -240,7 +240,7 @@ def register_user(user_in: UserCreate):
 
 
 @router.post("/login", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends()):
+def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
     db = get_db()
     email = form_data.username.strip().lower()
     password = form_data.password.strip()
@@ -277,6 +277,24 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
     if not user.get("is_active", True):
         raise HTTPException(status_code=400, detail="Account is inactive")
+
+    # Record login vitals
+    now_str = datetime.now(timezone.utc).isoformat()
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    user_agent = request.headers.get("user-agent", "Next.js Web / UX4G")
+    browser_type = "Chrome / Windows" if "Chrome" in user_agent else "Firefox" if "Firefox" in user_agent else "Safari" if "Safari" in user_agent else "Web Client"
+    platform = f"Desktop Web ({browser_type})"
+
+    db["users"].update_one(
+        {"_id": user["_id"]},
+        {
+            "$set": {
+                "last_login_at": now_str,
+                "last_ip": client_ip,
+                "last_platform": platform,
+            }
+        }
+    )
 
     role = user.get("role", "DOCTOR")
     token = create_access_token(subject=str(user["_id"]), role=role)

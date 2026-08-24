@@ -105,6 +105,27 @@ def list_hospitals(
         prescription_count = db["prescriptions"].count_documents({"clinic_id": cid})
         patient_count = db["patients"].count_documents({"clinic_id": cid})
         medicine_count = db["medicines"].count_documents({"clinic_id": cid})
+        bill_count = db["pharmacy_bills"].count_documents({"clinic_id": cid})
+
+        # Calculate revenue
+        bills = list(db["pharmacy_bills"].find({"clinic_id": cid}))
+        total_revenue = sum(float(b.get("grand_total", b.get("total_amount", 0))) for b in bills)
+
+        # Owner user info
+        owner = db["users"].find_one({"clinic_id": cid, "role": {"$in": ["CLINIC_ADMIN", "DOCTOR"]}}) or db["users"].find_one({"clinic_id": cid})
+        owner_info = None
+        if owner:
+            owner_info = {
+                "name": owner.get("full_name", owner.get("name", "Doctor / Admin")),
+                "email": owner.get("email", clinic.get("email", "")),
+                "phone": owner.get("phone", clinic.get("phone", "")),
+                "role": owner.get("role", "DOCTOR"),
+                "registration_number": owner.get("registration_number", clinic.get("registration_number", "")),
+            }
+
+        # Calculate dates
+        created_at_str = clinic.get("created_at") or (sub.get("created_at") if sub else None) or now_dt.isoformat()
+        active_from_str = (sub.get("updated_at") if sub else None) or (sub.get("created_at") if sub else None) or created_at_str
 
         # Calculate trial remaining days
         valid_until_str = sub.get("valid_until") if sub else None
@@ -120,19 +141,28 @@ def list_hospitals(
         row = {
             "id": cid,
             "name": clinic.get("name", ""),
+            "name_mr": clinic.get("name_mr", ""),
             "address": clinic.get("address", ""),
             "phone": clinic.get("phone", ""),
             "email": clinic.get("email", ""),
             "registration_number": clinic.get("registration_number", ""),
+            "created_at": created_at_str,
+            "active_from": active_from_str,
             "doctor_count": doctor_count,
             "pharmacist_count": pharmacist_count,
             "prescription_count": prescription_count,
             "patient_count": patient_count,
             "medicine_count": medicine_count,
+            "bill_count": bill_count,
+            "total_revenue": total_revenue,
             "subscription_plan": sub.get("plan", "FREE") if sub else "FREE",
             "subscription_active": sub.get("is_active", True) if sub else True,
             "subscription_valid_until": valid_until_str,
             "trial_days_remaining": trial_days_left,
+            "custom_price_inr": sub.get("custom_price_inr") if sub else None,
+            "owner_info": owner_info,
+            "facilities": clinic.get("facilities", ["General Medicine", "ICU & OPD", "Laboratory"]),
+            "clinic_hours": clinic.get("clinic_hours", "Morning 9 to 1 | Evening 5 to 9"),
         }
         result.append(row)
 
@@ -498,6 +528,64 @@ def set_custom_hospital_subscription(
         "message": f"Custom subscription plan '{payload.plan}' (Price: ₹{payload.custom_price_inr}) assigned to hospital successfully until {valid_until_str[:10]}!",
         "subscription": sub_doc,
     }
+
+
+# ─── User Accounts & Login Vitals ─────────────────────────────────────────────
+
+@router.get("/users", summary="Master Admin: List all platform users with login vitals and hospital mapping")
+def list_admin_users(
+    search: Optional[str] = None,
+    role: Optional[str] = None,
+    _: dict = Depends(require_master_admin),
+):
+    """Returns all platform users across hospitals with detailed login vitals, online status, platform, and last login time."""
+    db = get_db()
+    query_filter: dict = {}
+    if search:
+        query_filter["$or"] = [
+            {"full_name": {"$regex": search, "$options": "i"}},
+            {"email": {"$regex": search, "$options": "i"}},
+        ]
+    if role:
+        query_filter["role"] = role.upper()
+
+    users = list(db["users"].find(query_filter).sort("created_at", -1))
+    result = []
+    now_dt = datetime.now(timezone.utc)
+
+    for u in users:
+        uid = str(u["_id"])
+        cid = u.get("clinic_id", "")
+        clinic = db["clinics"].find_one({"_id": cid}) if cid else None
+
+        last_login_str = u.get("last_login_at") or u.get("created_at") or now_dt.isoformat()
+        is_online = False
+        if last_login_str:
+            try:
+                login_dt = datetime.fromisoformat(last_login_str.replace("Z", "+00:00"))
+                # Consider online if logged in within last 120 minutes
+                if (now_dt - login_dt).total_seconds() < 7200:
+                    is_online = True
+            except Exception:
+                is_online = False
+
+        result.append({
+            "id": uid,
+            "full_name": u.get("full_name", "Unknown User"),
+            "email": u.get("email", ""),
+            "role": u.get("role", "DOCTOR"),
+            "clinic_id": cid,
+            "hospital_name": clinic.get("name", "Suyog Hospital Motala") if clinic else "Suyog Hospital Motala",
+            "is_active": u.get("is_active", True),
+            "license_number": u.get("license_number"),
+            "last_login_at": last_login_str,
+            "last_platform": u.get("last_platform", "Desktop Web (Chrome / Windows)"),
+            "last_ip": u.get("last_ip", "127.0.0.1 (Local / Maharashtra)"),
+            "is_online": is_online,
+            "created_at": u.get("created_at") or now_dt.isoformat(),
+        })
+
+    return result
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────

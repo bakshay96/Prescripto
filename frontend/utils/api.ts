@@ -396,22 +396,59 @@ export interface PlatformAnalytics {
   active_subscriptions: number;
 }
 
+export interface HospitalOwnerInfo {
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  registration_number?: string;
+}
+
 export interface Hospital {
   id: string;
   name: string;
+  name_mr?: string;
   address: string;
   phone: string;
   email: string;
   registration_number: string;
+  created_at?: string;
+  active_from?: string;
   doctor_count: number;
   pharmacist_count?: number;
   prescription_count?: number;
   patient_count?: number;
   medicine_count?: number;
+  bill_count?: number;
+  total_revenue?: number;
   subscription_plan: string;
   subscription_active: boolean;
   subscription_valid_until: string | null;
   trial_days_remaining?: number;
+  custom_price_inr?: number | null;
+  owner_info?: HospitalOwnerInfo | null;
+  facilities?: string[];
+  clinic_hours?: string;
+}
+
+export interface UserLoginVitals {
+  id: string;
+  full_name: string;
+  email: string;
+  role: string;
+  clinic_id: string;
+  hospital_name: string;
+  is_active: boolean;
+  license_number?: string | null;
+  last_login_at: string;
+  last_platform: string;
+  last_ip: string;
+  is_online: boolean;
+  created_at: string;
+}
+
+export function listAdminUsers(): Promise<UserLoginVitals[]> {
+  return apiFetch<UserLoginVitals[]>("/admin/users");
 }
 
 export interface BroadcastMessage {

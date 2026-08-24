@@ -493,17 +493,17 @@ export default function PrescriptionWriter({
       prescriptionNumber: "RX-DRAFT",
       date: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
       doctorProfile: {
-        hospitalName: profile.hospitalName || "Suyog Hospital",
+        hospitalName: profile.hospitalName || "",
         hospitalNameMr: profile.hospitalNameMr,
-        doctorName: profile.doctorName || "Dr. Vikas Karande",
+        doctorName: profile.doctorName || "",
         doctorNameMr: profile.doctorNameMr,
-        qualifications: profile.qualifications || "M.D. (Medicine)",
-        regNumber: profile.regNumber || "MMC 2012/03/0842",
-        specialties: profile.specialties || "Multispeciality & Critical Care Center",
-        address: profile.address || "Main Road, Near Bus Stand, Motala, Dist. Buldhana",
-        phone: profile.phone || "07267-242100 | Emergency: 98230 00000",
-        facilities: profile.facilities || ["General Medicine", "ICU & OPD", "Laboratory"],
-        clinicHours: profile.clinicHours || "Morning 9 to 1 | Evening 5 to 9",
+        qualifications: profile.qualifications || "",
+        regNumber: profile.regNumber || "",
+        specialties: profile.specialties || "",
+        address: profile.address || "",
+        phone: profile.phone || "",
+        facilities: profile.facilities || [],
+        clinicHours: profile.clinicHours || "",
         signatureDataUrl: profile.signatureDataUrl ?? null,
       },
       patientName: selectedPatient ? selectedPatient.name : (patientSearch || "Patient Name"),
@@ -681,7 +681,7 @@ export default function PrescriptionWriter({
         <div className="flex items-center gap-2">
           <span className="text-xl">⚕️</span>
           <div>
-            <h2 className="text-sm font-extrabold" style={{ color: isDark ? "white" : "#0f172a" }}>Suyog Hospital Prescription Writer</h2>
+            <h2 className="text-sm font-extrabold" style={{ color: isDark ? "white" : "#0f172a" }}>{profile.hospitalName ? `${profile.hospitalName} Prescription Writer` : "OPD Prescription Writer"}</h2>
             <p className="text-[11px]" style={{ color: isDark ? "#64748b" : "#475569" }}>Multilingual (Marathi / Hindi / English) • A4 Print Engine</p>
           </div>
         </div>

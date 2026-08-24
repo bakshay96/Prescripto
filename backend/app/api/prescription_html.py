@@ -274,22 +274,17 @@ def render_prescription_html(rx, profile, lang: str = "mr") -> str:
 
     # Profile defaults if not set
     hos_name = (profile.hospital_name_mr if lang == "mr" and profile and profile.hospital_name_mr
-                else (profile.hospital_name_en if profile else "Suyog Hospital"))
+                else (profile.hospital_name_en if profile else ""))
     doc_name = (profile.doctor_name_mr if lang == "mr" and profile and profile.doctor_name_mr
-                else (profile.doctor_name_en if profile else "Dr. Vikas Va. Karande"))
-    quals = profile.qualifications if profile else "M.B.B.S. (MUHS NASIK)"
-    reg = profile.reg_number if profile else "06/2002/2451"
-    spec = profile.specialties if profile else "जनरल फिजीशियन व सर्जन बालरोग व क्षीरोग चिकित्सक"
-    hours = profile.clinic_hours if profile else "सकाळी ९ ते सायं. ६ वाजेपर्यंत"
-    address = profile.address if profile else "तहसिल समोर, बुलडाणा रोड, मोताळा"
-    phone = profile.phone if profile else "7757003800"
+                else (profile.doctor_name_en if profile else "Doctor"))
+    quals = profile.qualifications if profile else ""
+    reg = profile.reg_number if profile else ""
+    spec = profile.specialties if profile else ""
+    hours = profile.clinic_hours if profile else ""
+    address = profile.address if profile else ""
+    phone = profile.phone if profile else ""
     uhid_prefix = profile.uhid_prefix if profile else "U.H.I.D."
     facilities = profile.facilities if profile else []
-    if not facilities:
-        facilities = ["हृदय रोग", "ब्लड प्रेशर", "दमा", "टि.बी.", "छातीचे विकार",
-                      "मधुमेह", "एड्स सहा", "नेफ्युलायझेशन",
-                      "त्वचारोग विषयक सहा", "आहार विषयक सहा",
-                      "आलेरग्णो विभाग (भरतीची व्यवस्था)"]
 
     patient = rx.patient
     pat_name = patient.name.upper() if patient else "PATIENT"

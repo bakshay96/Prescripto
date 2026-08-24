@@ -24,9 +24,30 @@ import {
   getAdminPlans,
   saveAdminPlan,
   setCustomHospitalSubscription,
+  listAdminUsers,
+  UserLoginVitals,
 } from "../utils/api";
 
-type AdminTab = "overview" | "hospitals" | "trials" | "plans" | "broadcast" | "queries";
+type AdminTab = "overview" | "hospitals" | "users" | "trials" | "plans" | "broadcast" | "queries";
+
+function formatIndianDateTime(isoStr?: string | null): string {
+  if (!isoStr) return "N/A";
+  try {
+    const dt = new Date(isoStr);
+    if (isNaN(dt.getTime())) return "N/A";
+    return dt.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Kolkata",
+    }) + " IST";
+  } catch {
+    return "N/A";
+  }
+}
 
 function AdminContent() {
   const router = useRouter();
@@ -39,13 +60,20 @@ function AdminContent() {
 
   const [analytics, setAnalytics] = useState<PlatformAnalytics | null>(null);
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [userVitals, setUserVitals] = useState<UserLoginVitals[]>([]);
   const [broadcasts, setBroadcasts] = useState<BroadcastMessage[]>([]);
   const [queries, setQueries] = useState<SupportQuery[]>([]);
   const [plans, setPlans] = useState<AdminPlanConfig[]>([]);
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
 
   const [search, setSearch] = useState("");
+  const [userSearch, setUserSearch] = useState("");
+  const [userRoleFilter, setUserRoleFilter] = useState("ALL");
   const [replyText, setReplyText] = useState<Record<string, string>>({});
+
+  // Hospital Detail Modal Inspector State
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedDetailHospital, setSelectedDetailHospital] = useState<Hospital | null>(null);
 
   // Plan Config Form State
   const [editingPlan, setEditingPlan] = useState<AdminPlanConfig | null>(null);
@@ -84,18 +112,20 @@ function AdminContent() {
     setLoading(true);
     setError(null);
     try {
-      const [anData, hosData, bData, qData, pData] = await Promise.all([
+      const [anData, hosData, bData, qData, pData, uData] = await Promise.all([
         getAdminAnalytics().catch(() => null),
         listHospitals().catch(() => []),
         listBroadcastMessages().catch(() => []),
         listSupportQueries().catch(() => []),
         getAdminPlans().catch(() => []),
+        listAdminUsers().catch(() => []),
       ]);
       setAnalytics(anData);
       setHospitals(hosData);
       setBroadcasts(bData);
       setQueries(qData);
       setPlans(pData);
+      setUserVitals(uData);
     } catch (err: any) {
       setError(err.message || "Failed to load Master Admin control center.");
     } finally {
@@ -302,6 +332,7 @@ function AdminContent() {
             {[
               { id: "overview", label: "📊 System Analytics", badge: analytics ? `${analytics.total_hospitals} Hosp` : null },
               { id: "hospitals", label: "🏥 Hospitals & Medical Stores", badge: `${hospitals.length}` },
+              { id: "users", label: "👥 User Accounts & Live Login Vitals", badge: userVitals.length ? `${userVitals.filter((u) => u.is_online).length} Live` : null },
               { id: "plans", label: "💳 Plans & Pricing Control", badge: `${plans.length}` },
               { id: "trials", label: "⭐ Subscription & Trial Manager", badge: `${hospitals.filter((h) => h.subscription_plan === "TRIAL" || (h.trial_days_remaining ?? 0) > 0).length}` },
               { id: "broadcast", label: "📢 Broadcast Messages", badge: `${broadcasts.length}` },
@@ -454,7 +485,16 @@ function AdminContent() {
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
                           <div>
                             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                              <span style={{ fontSize: 18, fontWeight: 900, color: theme.text }}>{h.name}</span>
+                              <span
+                                onClick={() => {
+                                  setSelectedDetailHospital(h);
+                                  setDetailModalOpen(true);
+                                }}
+                                style={{ fontSize: 18, fontWeight: 900, color: theme.text, cursor: "pointer" }}
+                                title="Click to view full hospital details"
+                              >
+                                {h.name} {h.name_mr ? `(${h.name_mr})` : ""}
+                              </span>
                               <span
                                 className={`ux4g-badge ${
                                   h.subscription_active
@@ -466,14 +506,46 @@ function AdminContent() {
                               >
                                 {h.subscription_active ? (isTrial ? `TRIAL (${h.trial_days_remaining}D LEFT)` : h.subscription_plan) : "BLOCKED"}
                               </span>
+                              {h.custom_price_inr && (
+                                <span className="ux4g-badge ux4g-badge-saffron">CUSTOM: ₹{h.custom_price_inr}/mo</span>
+                              )}
                             </div>
-                            <div style={{ fontSize: 12, color: theme.textMuted, marginTop: 4 }}>
+
+                            {/* Date & Active From Badges (Indian Standard Time) */}
+                            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 8, fontSize: 11, fontWeight: 800 }}>
+                              <span style={{ padding: "3px 10px", borderRadius: 6, background: isDark ? "rgba(16,185,129,0.15)" : "#ecfdf5", border: "1px solid #10b981", color: isDark ? "#6ee7b7" : "#046a38" }}>
+                                ⚡ Active From: {formatIndianDateTime(h.active_from || h.created_at)}
+                              </span>
+                              <span style={{ padding: "3px 10px", borderRadius: 6, background: isDark ? "rgba(59,130,246,0.15)" : "#eff6ff", border: "1px solid #3b82f6", color: isDark ? "#93c5fd" : "#1d4ed8" }}>
+                                📅 Created On: {formatIndianDateTime(h.created_at)}
+                              </span>
+                              {h.owner_info && (
+                                <span style={{ padding: "3px 10px", borderRadius: 6, background: isDark ? "rgba(139,92,246,0.15)" : "#f5f3ff", border: "1px solid #8b5cf6", color: isDark ? "#c084fc" : "#6d28d9" }}>
+                                  👨‍⚕️ Owner: {h.owner_info.name} ({h.owner_info.role})
+                                </span>
+                              )}
+                            </div>
+
+                            <div style={{ fontSize: 12, color: theme.textMuted, marginTop: 6 }}>
                               📧 {h.email} · 📞 {h.phone || "N/A"} · 📜 Reg: {h.registration_number || "REG-N/A"} · 📍 {h.address || "Location N/A"}
                             </div>
                           </div>
 
                           {/* Action Buttons */}
                           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                            {/* View Details Modal Button */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedDetailHospital(h);
+                                setDetailModalOpen(true);
+                              }}
+                              className="ux4g-btn ux4g-btn-primary"
+                              style={{ padding: "6px 12px", fontSize: 11 }}
+                            >
+                              ℹ️ Hospital Details
+                            </button>
+
                             {/* Plan Selector */}
                             <select
                               value={h.subscription_plan}
@@ -564,6 +636,131 @@ function AdminContent() {
                     );
                   })
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* ════ TAB: USER ACCOUNTS & LIVE LOGIN VITALS ════ */}
+          {activeTab === "users" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {/* Header card */}
+              <div className="ux4g-card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+                <div>
+                  <div className="ux4g-card-title">👥 Master Admin: User Accounts &amp; Live Login Vitals Tracking</div>
+                  <p style={{ fontSize: 12, color: theme.textMuted, margin: "4px 0 0" }}>
+                    Track currently logged-in users, device platforms (Chrome/Desktop), client IP addresses, and last login timestamps across all hospitals in Indian Standard Time (IST).
+                  </p>
+                </div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <span className="ux4g-badge ux4g-badge-green" style={{ fontSize: 12, padding: "6px 12px" }}>
+                    🟢 {userVitals.filter((u) => u.is_online).length} Active Live Sessions
+                  </span>
+                  <span className="ux4g-badge ux4g-badge-gov" style={{ fontSize: 12, padding: "6px 12px" }}>
+                    👥 {userVitals.length} Total Registered Users
+                  </span>
+                </div>
+              </div>
+
+              {/* Filters & Search Bar */}
+              <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                <div style={{ flex: 1, minWidth: 260 }}>
+                  <TransliteratedInput
+                    placeholder="Search user by name, email or hospital…"
+                    value={userSearch}
+                    onChange={(val) => setUserSearch(val)}
+                    className="ux4g-input"
+                  />
+                </div>
+                <select
+                  value={userRoleFilter}
+                  onChange={(e) => setUserRoleFilter(e.target.value)}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: 8,
+                    background: isDark ? "#020617" : "#ffffff",
+                    border: `1px solid ${isDark ? "#334155" : "#cbd5e1"}`,
+                    color: theme.text,
+                    fontSize: 13,
+                    fontWeight: 800,
+                  }}
+                >
+                  <option value="ALL">All User Roles</option>
+                  <option value="DOCTOR">👨‍⚕️ Doctors Only</option>
+                  <option value="PHARMACIST">💊 Pharmacists Only</option>
+                  <option value="CLINIC_ADMIN">🏥 Hospital Admins</option>
+                  <option value="MASTER_ADMIN">🏛️ Master Admin</option>
+                </select>
+              </div>
+
+              {/* User Vitals Table */}
+              <div className="ux4g-card" style={{ padding: 0, overflow: "hidden" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, textAlign: "left" }}>
+                  <thead>
+                    <tr style={{ background: isDark ? "#020617" : "#f1f5f9", borderBottom: `1px solid ${isDark ? "#1e293b" : "#e2e8f0"}` }}>
+                      <th style={{ padding: "12px 16px", fontWeight: 900 }}>User &amp; Role</th>
+                      <th style={{ padding: "12px 16px", fontWeight: 900 }}>Associated Hospital</th>
+                      <th style={{ padding: "12px 16px", fontWeight: 900 }}>Session Status</th>
+                      <th style={{ padding: "12px 16px", fontWeight: 900 }}>Logged In Platform &amp; Device</th>
+                      <th style={{ padding: "12px 16px", fontWeight: 900 }}>Last Login Time (IST)</th>
+                      <th style={{ padding: "12px 16px", fontWeight: 900 }}>IP &amp; Client Address</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {userVitals
+                      .filter((u) => {
+                        const matchQuery =
+                          u.full_name.toLowerCase().includes(userSearch.toLowerCase()) ||
+                          u.email.toLowerCase().includes(userSearch.toLowerCase()) ||
+                          u.hospital_name.toLowerCase().includes(userSearch.toLowerCase());
+                        const matchRole = userRoleFilter === "ALL" || u.role.toUpperCase() === userRoleFilter;
+                        return matchQuery && matchRole;
+                      })
+                      .map((u) => (
+                        <tr key={u.id} style={{ borderBottom: `1px solid ${isDark ? "#1e293b" : "#f1f5f9"}` }}>
+                          <td style={{ padding: "12px 16px" }}>
+                            <div style={{ fontWeight: 900, color: theme.text }}>{u.full_name}</div>
+                            <div style={{ fontSize: 11, color: theme.textMuted }}>
+                              📧 {u.email} {u.license_number ? `· Reg: ${u.license_number}` : ""}
+                            </div>
+                            <span className="ux4g-badge ux4g-badge-gov" style={{ fontSize: 9, marginTop: 4 }}>
+                              {u.role}
+                            </span>
+                          </td>
+                          <td style={{ padding: "12px 16px", fontWeight: 800, color: "#005691" }}>
+                            🏥 {u.hospital_name}
+                          </td>
+                          <td style={{ padding: "12px 16px" }}>
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 6,
+                                padding: "3px 10px",
+                                borderRadius: 12,
+                                fontSize: 11,
+                                fontWeight: 900,
+                                background: u.is_online ? "rgba(16,185,129,0.15)" : isDark ? "rgba(255,255,255,0.05)" : "#f1f5f9",
+                                color: u.is_online ? "#10b981" : theme.textMuted,
+                                border: `1px solid ${u.is_online ? "#10b981" : isDark ? "#334155" : "#cbd5e1"}`,
+                              }}
+                            >
+                              <span style={{ height: 8, width: 8, borderRadius: "50%", background: u.is_online ? "#10b981" : "#94a3b8", display: "inline-block" }}></span>
+                              {u.is_online ? "ONLINE" : "OFFLINE"}
+                            </span>
+                          </td>
+                          <td style={{ padding: "12px 16px", fontSize: 12, fontWeight: 800 }}>
+                            💻 {u.last_platform}
+                          </td>
+                          <td style={{ padding: "12px 16px", fontSize: 12, color: "#ff671f", fontWeight: 800 }}>
+                            ⏰ {formatIndianDateTime(u.last_login_at)}
+                          </td>
+                          <td style={{ padding: "12px 16px", fontSize: 11, color: theme.textMuted }}>
+                            🌐 {u.last_ip}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
@@ -1302,6 +1499,268 @@ function AdminContent() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ════ MODAL 0: DETAILED HOSPITAL INSPECTOR MODAL ════ */}
+      {detailModalOpen && selectedDetailHospital && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 99999,
+            background: "rgba(0,0,0,0.65)",
+            backdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+        >
+          <div
+            className="ux4g-card"
+            style={{
+              width: 720,
+              maxWidth: "100%",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              background: isDark ? "#0f172a" : "#ffffff",
+              border: `2px solid ${isDark ? "#3b82f6" : "#005691"}`,
+              boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
+            }}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                paddingBottom: 16,
+                marginBottom: 16,
+                borderBottom: `2px solid ${isDark ? "#1e293b" : "#e2e8f0"}`,
+              }}
+            >
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 24 }}>🏥</span>
+                  <h2 style={{ fontSize: 20, fontWeight: 900, margin: 0, color: theme.text }}>
+                    {selectedDetailHospital.name}
+                  </h2>
+                  {selectedDetailHospital.name_mr && (
+                    <span style={{ fontSize: 15, fontWeight: 800, color: "#ff671f" }}>
+                      ({selectedDetailHospital.name_mr})
+                    </span>
+                  )}
+                  <span
+                    className={`ux4g-badge ${
+                      selectedDetailHospital.subscription_active ? "ux4g-badge-green" : "ux4g-badge-red"
+                    }`}
+                  >
+                    {selectedDetailHospital.subscription_active ? "VERIFIED ACTIVE" : "BLOCKED"}
+                  </span>
+                </div>
+                <div style={{ fontSize: 12, color: theme.textMuted, marginTop: 4 }}>
+                  Registration ID: <strong>{selectedDetailHospital.registration_number || "CL-SUYOG-001"}</strong> · Clinic ID: {selectedDetailHospital.id}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDetailModalOpen(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: theme.textMuted,
+                  fontSize: 20,
+                  fontWeight: 900,
+                  cursor: "pointer",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              {/* SECTION 1: TIMELINE & DATES (INDIAN STANDARD TIME) */}
+              <div
+                style={{
+                  padding: 16,
+                  borderRadius: 12,
+                  background: isDark ? "#020617" : "#f8fafc",
+                  border: `1.5px solid ${isDark ? "#1e293b" : "#cbd5e1"}`,
+                }}
+              >
+                <div style={{ fontSize: 12, fontWeight: 900, color: "#ff671f", textTransform: "uppercase", marginBottom: 10 }}>
+                  🕒 Registration &amp; Activation Timeline (Indian Standard Time - IST)
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: theme.textMuted }}>📅 Created / Registered Date &amp; Time:</div>
+                    <div style={{ fontSize: 14, fontWeight: 900, color: theme.text, marginTop: 2 }}>
+                      {formatIndianDateTime(selectedDetailHospital.created_at)}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: theme.textMuted }}>⚡ Subscription Active From:</div>
+                    <div style={{ fontSize: 14, fontWeight: 900, color: "#10b981", marginTop: 2 }}>
+                      {formatIndianDateTime(selectedDetailHospital.active_from || selectedDetailHospital.created_at)}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: theme.textMuted }}>⏳ Subscription Valid Until:</div>
+                    <div style={{ fontSize: 14, fontWeight: 900, color: "#3b82f6", marginTop: 2 }}>
+                      {formatIndianDateTime(selectedDetailHospital.subscription_valid_until)}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: theme.textMuted }}>⭐ Trial Days Remaining:</div>
+                    <div style={{ fontSize: 14, fontWeight: 900, color: "#d97706", marginTop: 2 }}>
+                      {selectedDetailHospital.trial_days_remaining ?? 0} Days Left
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 2: OWNER & DOCTOR USER DETAILS */}
+              <div
+                style={{
+                  padding: 16,
+                  borderRadius: 12,
+                  background: isDark ? "#020617" : "#f8fafc",
+                  border: `1.5px solid ${isDark ? "#1e293b" : "#cbd5e1"}`,
+                }}
+              >
+                <div style={{ fontSize: 12, fontWeight: 900, color: "#005691", textTransform: "uppercase", marginBottom: 10 }}>
+                  👨‍⚕️ Primary Admin &amp; Owner Doctor Information
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: theme.textMuted }}>Doctor / Admin Full Name:</div>
+                    <div style={{ fontSize: 15, fontWeight: 900, color: theme.text, marginTop: 2 }}>
+                      {selectedDetailHospital.owner_info?.name || selectedDetailHospital.name}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: theme.textMuted }}>Email Address:</div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: theme.text, marginTop: 2 }}>
+                      📧 {selectedDetailHospital.owner_info?.email || selectedDetailHospital.email}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: theme.textMuted }}>Contact Phone:</div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: theme.text, marginTop: 2 }}>
+                      📞 {selectedDetailHospital.owner_info?.phone || selectedDetailHospital.phone || "7757003800"}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: theme.textMuted }}>MMC Medical Reg. Number:</div>
+                    <div style={{ fontSize: 13, fontWeight: 900, color: "#8b5cf6", marginTop: 2 }}>
+                      📜 {selectedDetailHospital.owner_info?.registration_number || selectedDetailHospital.registration_number || "MMC 2012/03/0842"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 3: SUBSCRIPTION & PLAN PRICING */}
+              <div
+                style={{
+                  padding: 16,
+                  borderRadius: 12,
+                  background: isDark ? "#020617" : "#f8fafc",
+                  border: `1.5px solid ${isDark ? "#1e293b" : "#cbd5e1"}`,
+                }}
+              >
+                <div style={{ fontSize: 12, fontWeight: 900, color: "#046a38", textTransform: "uppercase", marginBottom: 10 }}>
+                  💳 Active Plan &amp; Billing Details
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: theme.textMuted }}>Currently Active Plan:</div>
+                    <div style={{ fontSize: 16, fontWeight: 900, color: "#046a38", marginTop: 2 }}>
+                      {selectedDetailHospital.subscription_plan} PLAN
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: theme.textMuted }}>Billing Status:</div>
+                    <div style={{ fontSize: 13, fontWeight: 900, color: selectedDetailHospital.subscription_active ? "#10b981" : "#f43f5e", marginTop: 2 }}>
+                      {selectedDetailHospital.subscription_active ? "✅ ACTIVE & VERIFIED" : "🚫 SUSPENDED"}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: theme.textMuted }}>Monthly Price / Override:</div>
+                    <div style={{ fontSize: 16, fontWeight: 900, color: "#ff671f", marginTop: 2 }}>
+                      ₹{selectedDetailHospital.custom_price_inr ?? (selectedDetailHospital.subscription_plan === "PRO" ? 999 : 0)} / mo
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 4: OPERATIONAL VITALS & STATS */}
+              <div
+                style={{
+                  padding: 16,
+                  borderRadius: 12,
+                  background: isDark ? "#020617" : "#f8fafc",
+                  border: `1.5px solid ${isDark ? "#1e293b" : "#cbd5e1"}`,
+                }}
+              >
+                <div style={{ fontSize: 12, fontWeight: 900, color: "#8b5cf6", textTransform: "uppercase", marginBottom: 10 }}>
+                  📊 Hospital Operational Vitals &amp; Pharmacy Revenue
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10 }}>
+                  <div style={{ padding: 10, borderRadius: 8, background: isDark ? "#0f172a" : "#fff", border: `1px solid ${isDark ? "#334155" : "#e2e8f0"}` }}>
+                    <div style={{ fontSize: 10, fontWeight: 900, color: theme.textMuted }}>👨‍⚕️ Doctors</div>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: "#005691" }}>{selectedDetailHospital.doctor_count}</div>
+                  </div>
+                  <div style={{ padding: 10, borderRadius: 8, background: isDark ? "#0f172a" : "#fff", border: `1px solid ${isDark ? "#334155" : "#e2e8f0"}` }}>
+                    <div style={{ fontSize: 10, fontWeight: 900, color: theme.textMuted }}>💊 Pharmacists</div>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: "#046a38" }}>{selectedDetailHospital.pharmacist_count ?? 1}</div>
+                  </div>
+                  <div style={{ padding: 10, borderRadius: 8, background: isDark ? "#0f172a" : "#fff", border: `1px solid ${isDark ? "#334155" : "#e2e8f0"}` }}>
+                    <div style={{ fontSize: 10, fontWeight: 900, color: theme.textMuted }}>📄 Prescriptions</div>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: "#ff671f" }}>{selectedDetailHospital.prescription_count ?? 0}</div>
+                  </div>
+                  <div style={{ padding: 10, borderRadius: 8, background: isDark ? "#0f172a" : "#fff", border: `1px solid ${isDark ? "#334155" : "#e2e8f0"}` }}>
+                    <div style={{ fontSize: 10, fontWeight: 900, color: theme.textMuted }}>👤 Patients</div>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: "#8b5cf6" }}>{selectedDetailHospital.patient_count ?? 0}</div>
+                  </div>
+                  <div style={{ padding: 10, borderRadius: 8, background: isDark ? "#0f172a" : "#fff", border: `1px solid ${isDark ? "#334155" : "#e2e8f0"}` }}>
+                    <div style={{ fontSize: 10, fontWeight: 900, color: theme.textMuted }}>🧾 Pharmacy Bills</div>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: "#d97706" }}>{selectedDetailHospital.bill_count ?? 0}</div>
+                  </div>
+                  <div style={{ padding: 10, borderRadius: 8, background: isDark ? "#0f172a" : "#fff", border: `1px solid ${isDark ? "#334155" : "#e2e8f0"}` }}>
+                    <div style={{ fontSize: 10, fontWeight: 900, color: theme.textMuted }}>💰 Total Revenue</div>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: "#10b981" }}>
+                      ₹{(selectedDetailHospital.total_revenue ?? 0).toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 5: ADDRESS & CLINIC FACILITIES */}
+              <div style={{ fontSize: 12, color: theme.textMuted, display: "flex", flexDirection: "column", gap: 4 }}>
+                <div>📍 <strong>Full Address:</strong> {selectedDetailHospital.address || "Tahsil Samore, Buldhana Road, Motala"}</div>
+                <div>⏰ <strong>Operating Hours:</strong> {selectedDetailHospital.clinic_hours || "Morning 9:00 AM to 1:00 PM | Evening 5:00 PM to 9:00 PM"}</div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
+                  {(selectedDetailHospital.facilities || ["General OPD", "ICU Facility", "Pharmacy Counter", "Pathology Lab"]).map((f, i) => (
+                    <span key={i} className="ux4g-badge ux4g-badge-gov" style={{ fontSize: 10 }}>
+                      🏥 {f}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setDetailModalOpen(false)}
+                  className="ux4g-btn ux4g-btn-primary"
+                  style={{ padding: "8px 24px" }}
+                >
+                  Close Hospital Details Inspector
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

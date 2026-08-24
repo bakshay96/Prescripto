@@ -23,31 +23,19 @@ export interface DoctorProfile {
 }
 
 const DEFAULT_PROFILE: DoctorProfile = {
-  hospitalName: "Suyog Hospital",
-  hospitalNameMr: "सुयोग हॉस्पिटल",
-  doctorName: "Dr. Vikas Va. Karande",
-  doctorNameMr: "डॉ. विकास वा. करांडे",
-  qualifications: "M.B.B.S. (MUHS NASIK)",
-  regNumber: "06/2002/2451",
-  specialties: "जनरल फिजीशियन व सर्जन बालरोग व क्षीरोग चिकित्सक",
-  clinicHours: "सकाळी ९ ते सायं. ६ वाजेपर्यंत",
-  address: "तहसिल समोर, बुलडाणा रोड, मोताळा",
-  phone: "7757003800",
+  hospitalName: "",
+  hospitalNameMr: "",
+  doctorName: "",
+  doctorNameMr: "",
+  qualifications: "",
+  regNumber: "",
+  specialties: "",
+  clinicHours: "",
+  address: "",
+  phone: "",
   uhidPrefix: "U.H.I.D.",
-  defaultLang: "mr",
-  facilities: [
-    "हृदय रोग",
-    "ब्लड प्रेशर",
-    "दमा",
-    "टि.बी.",
-    "छातीचे विकार",
-    "मधुमेह",
-    "एड्स सहा",
-    "नेफ्युलायझेशन",
-    "त्वचारोग विषयक सहा",
-    "आहार विषयक सहा",
-    "आलेरग्णो विभाग (भरतीची व्यवस्था)",
-  ],
+  defaultLang: "en",
+  facilities: [],
 };
 
 export function useDoctorProfile() {
@@ -57,19 +45,19 @@ export function useDoctorProfile() {
     getClinicProfile()
       .then((res) => {
         setProfileState({
-          hospitalName: res.hospital_name_en || DEFAULT_PROFILE.hospitalName,
-          hospitalNameMr: res.hospital_name_mr || DEFAULT_PROFILE.hospitalNameMr,
-          doctorName: res.doctor_name_en || DEFAULT_PROFILE.doctorName,
-          doctorNameMr: res.doctor_name_mr || DEFAULT_PROFILE.doctorNameMr,
-          qualifications: res.qualifications || DEFAULT_PROFILE.qualifications,
-          regNumber: res.reg_number || DEFAULT_PROFILE.regNumber,
-          specialties: res.specialties || DEFAULT_PROFILE.specialties,
-          clinicHours: res.clinic_hours || DEFAULT_PROFILE.clinicHours,
-          address: res.address || DEFAULT_PROFILE.address,
-          phone: res.phone || DEFAULT_PROFILE.phone,
-          uhidPrefix: res.uhid_prefix || DEFAULT_PROFILE.uhidPrefix,
-          defaultLang: (res.default_lang as any) || "mr",
-          facilities: res.facilities.length > 0 ? res.facilities : DEFAULT_PROFILE.facilities,
+          hospitalName: res.hospital_name_en || "",
+          hospitalNameMr: res.hospital_name_mr || "",
+          doctorName: res.doctor_name_en || "",
+          doctorNameMr: res.doctor_name_mr || "",
+          qualifications: res.qualifications || "",
+          regNumber: res.reg_number || "",
+          specialties: res.specialties || "",
+          clinicHours: res.clinic_hours || "",
+          address: res.address || "",
+          phone: res.phone || "",
+          uhidPrefix: res.uhid_prefix || "U.H.I.D.",
+          defaultLang: (res.default_lang as any) || "en",
+          facilities: res.facilities || [],
           signatureDataUrl: res.signature_data_url ?? null,
         });
       })
@@ -146,12 +134,12 @@ function HeaderPreview({ profile, headerColor }: { profile: DoctorProfile; heade
     <div className="rounded-xl overflow-hidden border border-slate-700 mt-4" style={{ fontFamily: "'Arial', 'Noto Sans Devanagari', sans-serif" }}>
       <div className="px-4 py-3 text-white flex justify-between items-start" style={{ background: headerColor }}>
         <div>
-          <div className="text-base font-black">{profile.hospitalNameMr || profile.hospitalName}</div>
+          <div className="text-base font-black">{profile.hospitalNameMr || profile.hospitalName || "Hospital / Clinic Name"}</div>
           {profile.address && <div className="text-[10px] opacity-80 mt-0.5 leading-snug">{profile.address}</div>}
         </div>
         <div className="text-right text-[11px]">
-          <div className="font-extrabold">{profile.doctorNameMr || profile.doctorName}</div>
-          <div className="opacity-80">{profile.qualifications}</div>
+          <div className="font-extrabold">{profile.doctorNameMr || profile.doctorName || "Dr. Full Name"}</div>
+          <div className="opacity-80">{profile.qualifications || "Qualifications"}</div>
           {profile.regNumber && <div className="opacity-60 text-[9px]">Reg. {profile.regNumber}</div>}
         </div>
       </div>
@@ -298,11 +286,11 @@ export default function DoctorProfilePanel({ isDark = true, onSaved }: { isDark?
         <div className="p-6">
           <div className="flex items-center gap-4 flex-wrap">
             <div className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-black shadow-xl flex-shrink-0" style={{ background: "linear-gradient(135deg,#dc2626,#b91c1c)" }}>
-              {local.doctorName.slice(0, 2).toUpperCase()}
+              {(local.doctorName || "DR").slice(0, 2).toUpperCase()}
             </div>
             <div className="flex-1">
-              <h2 className={`text-xl font-extrabold ${isDark ? "text-white" : "text-slate-900"}`}>{local.doctorName}</h2>
-              <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-600"}`}>{local.qualifications}</p>
+              <h2 className={`text-xl font-extrabold ${isDark ? "text-white" : "text-slate-900"}`}>{local.doctorName || "Doctor Full Name"}</h2>
+              <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-600"}`}>{local.qualifications || "Doctor Qualifications"}</p>
             </div>
             <button
               type="button"
@@ -373,43 +361,43 @@ export default function DoctorProfilePanel({ isDark = true, onSaved }: { isDark?
           <div className="space-y-3">
             <div>
               <label className={labelClass}>Hospital Name (English)</label>
-              <TransliteratedInput value={local.hospitalName} onChange={(v) => updateField("hospitalName", v)} className={inputClass} placeholder="e.g. Suyog Hospital" />
+              <TransliteratedInput value={local.hospitalName} onChange={(v) => updateField("hospitalName", v)} className={inputClass} placeholder="Enter Hospital / Clinic Name" />
             </div>
             <div>
-              <label className={labelClass}>Hospital Name (Marathi / सुयोग हॉस्पिटल)</label>
-              <TransliteratedInput value={local.hospitalNameMr || ""} onChange={(v) => updateField("hospitalNameMr", v)} className={inputClass} placeholder="e.g. सुयोग हॉस्पिटल" />
+              <label className={labelClass}>Hospital Name (Marathi / हॉस्पिटलचे नाव)</label>
+              <TransliteratedInput value={local.hospitalNameMr || ""} onChange={(v) => updateField("hospitalNameMr", v)} className={inputClass} placeholder="हॉस्पिटलचे नाव प्रविष्ट करा (उदा. सुयोग हॉस्पिटल)" />
             </div>
             <div>
               <label className={labelClass}>Doctor Name (English)</label>
-              <TransliteratedInput value={local.doctorName} onChange={(v) => updateField("doctorName", v)} className={inputClass} placeholder="e.g. Dr. Vikas Karande" />
+              <TransliteratedInput value={local.doctorName} onChange={(v) => updateField("doctorName", v)} className={inputClass} placeholder="Enter Doctor Full Name (e.g. Dr. Name)" />
             </div>
             <div>
-              <label className={labelClass}>Doctor Name (Marathi / डॉ. विकास वा. करांडे)</label>
-              <TransliteratedInput value={local.doctorNameMr || ""} onChange={(v) => updateField("doctorNameMr", v)} className={inputClass} placeholder="e.g. डॉ. विकास वा. करांडे" />
+              <label className={labelClass}>Doctor Name (Marathi / डॉक्टरांचे नाव)</label>
+              <TransliteratedInput value={local.doctorNameMr || ""} onChange={(v) => updateField("doctorNameMr", v)} className={inputClass} placeholder="डॉक्टरांचे नाव प्रविष्ट करा (उदा. डॉ. विकास करांडे)" />
             </div>
             <div>
               <label className={labelClass}>Qualifications</label>
-              <TransliteratedInput value={local.qualifications} onChange={(v) => updateField("qualifications", v)} className={inputClass} placeholder="e.g. M.B.B.S., M.D." />
+              <TransliteratedInput value={local.qualifications} onChange={(v) => updateField("qualifications", v)} className={inputClass} placeholder="Enter Qualifications (e.g. M.B.B.S., M.D.)" />
             </div>
             <div>
               <label className={labelClass}>Specialties / विशेषज्ञता</label>
-              <TransliteratedInput value={local.specialties} onChange={(v) => updateField("specialties", v)} className={inputClass} placeholder="e.g. General Physician" />
+              <TransliteratedInput value={local.specialties} onChange={(v) => updateField("specialties", v)} className={inputClass} placeholder="Enter Specialties / Field" />
             </div>
             <div>
               <label className={labelClass}>Registration Number</label>
-              <TransliteratedInput value={local.regNumber} onChange={(v) => updateField("regNumber", v)} className={inputClass} placeholder="e.g. MMC/2002/2451" />
+              <TransliteratedInput value={local.regNumber} onChange={(v) => updateField("regNumber", v)} className={inputClass} placeholder="Enter Medical Council Reg. Number" />
             </div>
             <div>
               <label className={labelClass}>Clinic Hours / वेळ</label>
-              <TransliteratedInput value={local.clinicHours || ""} onChange={(v) => updateField("clinicHours", v)} className={inputClass} placeholder="e.g. Morning 9–1 | Evening 5–9" />
+              <TransliteratedInput value={local.clinicHours || ""} onChange={(v) => updateField("clinicHours", v)} className={inputClass} placeholder="Enter Clinic Hours (e.g. Morning 9–1 | Evening 5–9)" />
             </div>
             <div>
               <label className={labelClass}>Hospital Address / पत्ता</label>
-              <TransliteratedTextArea rows={2} value={local.address} onChange={(v) => updateField("address", v)} className={inputClass} placeholder="e.g. Motala, Dist. Buldhana" />
+              <TransliteratedTextArea rows={2} value={local.address} onChange={(v) => updateField("address", v)} className={inputClass} placeholder="Enter Full Hospital Address" />
             </div>
             <div>
               <label className={labelClass}>Phone Number</label>
-              <input type="tel" className={inputClass} value={local.phone} onChange={(e) => updateField("phone", e.target.value)} placeholder="e.g. 7757003800" />
+              <input type="tel" className={inputClass} value={local.phone} onChange={(e) => updateField("phone", e.target.value)} placeholder="Enter Contact Phone Number" />
             </div>
           </div>
         </div>

@@ -222,7 +222,7 @@ function DoctorDashboardContent() {
                 <span className="ux4g-badge ux4g-badge-saffron">OPD ACTIVE</span>
               </div>
               <p style={{ fontSize: 12, color: theme.textMuted, margin: "4px 0 0" }}>
-                {profile?.doctor_name_en || "Dr. Vikas Karande"} · {profile?.hospital_name_en || "Suyog Hospital"} · Reg: {profile?.reg_number || "MUHS NASIK"}
+                {profile?.doctor_name_en || "Doctor OPD"} {profile?.hospital_name_en ? `· ${profile.hospital_name_en}` : ""} {profile?.reg_number ? `· Reg: ${profile.reg_number}` : ""}
               </p>
             </div>
 

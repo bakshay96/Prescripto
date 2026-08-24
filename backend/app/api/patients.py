@@ -234,7 +234,7 @@ def get_patient_history(
         history.append({
             "id": str(rx.get("_id", "")),
             "prescription_number": rx.get("prescription_number", "RX-PREVIEW"),
-            "doctor_name": rx.get("doctor_name", "Dr. Vikas Karande"),
+            "doctor_name": rx.get("doctor_name", "Doctor"),
             "diagnosis": rx.get("diagnosis", rx.get("chief_complaints", "General OPD Consultation")),
             "chief_complaints": rx.get("chief_complaints", ""),
             "vitals": rx.get("vitals", {}),

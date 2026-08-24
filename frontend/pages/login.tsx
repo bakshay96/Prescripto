@@ -14,7 +14,7 @@ const DEMO_CREDENTIALS = [
     emoji: "🩺",
     email: "doctor@prescripto.com",
     password: "doctor123",
-    description: "Dr. Vikas Karande — Write prescriptions, manage patients",
+    description: "Doctor OPD Portal — Write prescriptions, manage patients",
     gradient: "linear-gradient(135deg,#c41e3a 0%,#be123c 100%)",
     glow: "rgba(196,30,58,0.35)",
     border: "rgba(196,30,58,0.4)",
@@ -332,16 +332,16 @@ export default function LoginPage() {
             <form onSubmit={handleRegister} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <div>
                 <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#64748b", marginBottom: 4, letterSpacing: "0.5px" }}>HOSPITAL / CLINIC NAME *</label>
-                <input type="text" required placeholder="Suyog Hospital" value={regClinicName} onChange={e => setRegClinicName(e.target.value)} style={inputStyle} />
+                <input type="text" required placeholder="e.g. City Hospital / सिटी हॉस्पिटल" value={regClinicName} onChange={e => setRegClinicName(e.target.value)} style={inputStyle} />
               </div>
               <div>
                 <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#64748b", marginBottom: 4, letterSpacing: "0.5px" }}>DOCTOR FULL NAME *</label>
-                <input type="text" required placeholder="Dr. Vikas Va. Karande" value={regFullName} onChange={e => setRegFullName(e.target.value)} style={inputStyle} />
+                <input type="text" required placeholder="e.g. Dr. Full Name / डॉ. नाव" value={regFullName} onChange={e => setRegFullName(e.target.value)} style={inputStyle} />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <div>
                   <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#64748b", marginBottom: 4, letterSpacing: "0.5px" }}>EMAIL *</label>
-                  <input type="email" required placeholder="doctor@suyog.com" value={regEmail} onChange={e => setRegEmail(e.target.value)} style={{ ...inputStyle, fontSize: 12 }} />
+                  <input type="email" required placeholder="doctor@hospital.com" value={regEmail} onChange={e => setRegEmail(e.target.value)} style={{ ...inputStyle, fontSize: 12 }} />
                 </div>
                 <div>
                   <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#64748b", marginBottom: 4, letterSpacing: "0.5px" }}>PASSWORD *</label>
@@ -351,16 +351,16 @@ export default function LoginPage() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <div>
                   <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#64748b", marginBottom: 4, letterSpacing: "0.5px" }}>PHONE</label>
-                  <input type="text" placeholder="7757003800" value={regClinicPhone} onChange={e => setRegClinicPhone(e.target.value)} style={{ ...inputStyle, fontSize: 12 }} />
+                  <input type="text" placeholder="e.g. 9823000000" value={regClinicPhone} onChange={e => setRegClinicPhone(e.target.value)} style={{ ...inputStyle, fontSize: 12 }} />
                 </div>
                 <div>
                   <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#64748b", marginBottom: 4, letterSpacing: "0.5px" }}>REG NUMBER</label>
-                  <input type="text" placeholder="06/2002/2451" value={regLicense} onChange={e => setRegLicense(e.target.value)} style={{ ...inputStyle, fontSize: 12 }} />
+                  <input type="text" placeholder="e.g. MMC/2024/0001" value={regLicense} onChange={e => setRegLicense(e.target.value)} style={{ ...inputStyle, fontSize: 12 }} />
                 </div>
               </div>
               <div>
                 <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#64748b", marginBottom: 4, letterSpacing: "0.5px" }}>HOSPITAL ADDRESS</label>
-                <input type="text" placeholder="तहसिल समोर, बुलडाणा रोड, मोताळा" value={regClinicAddress} onChange={e => setRegClinicAddress(e.target.value)} style={inputStyle} />
+                <input type="text" placeholder="e.g. Hospital Address / पत्ता" value={regClinicAddress} onChange={e => setRegClinicAddress(e.target.value)} style={inputStyle} />
               </div>
               <button type="submit" disabled={loading} style={{
                 width: "100%", padding: "13px", borderRadius: 12, border: "none",

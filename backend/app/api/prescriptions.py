@@ -535,16 +535,16 @@ def _render_html_from_mongo(rx: dict, patient: dict, doctor: dict,
 
     # Profile defaults
     hos_name = (profile.get("hospital_name_mr") if lang == "mr" and profile else None) or \
-               (profile.get("hospital_name_en") if profile else "Suyog Hospital") or "Suyog Hospital"
+               (profile.get("hospital_name_en") if profile else "") or ""
     doc_name = (profile.get("doctor_name_mr") if lang == "mr" and profile else None) or \
                (profile.get("doctor_name_en") if profile else
-                (doctor.get("full_name") if doctor else "Dr. Vikas Va. Karande"))
-    quals = (profile.get("qualifications") if profile else None) or "M.B.B.S. (MUHS NASIK)"
-    reg = (profile.get("reg_number") if profile else None) or "06/2002/2451"
-    spec = (profile.get("specialties") if profile else None) or "जनरल फिजीशियन व सर्जन बालरोग व क्षीरोग चिकित्सक"
-    hours = (profile.get("clinic_hours") if profile else None) or "सकाळी ९ ते सायं. ६ वाजेपर्यंत"
-    address = (profile.get("address") if profile else None) or "तहसिल समोर, बुलडाणा रोड, मोताळा"
-    phone = (profile.get("phone") if profile else None) or "7757003800"
+                (doctor.get("full_name") if doctor else "Doctor"))
+    quals = (profile.get("qualifications") if profile else None) or ""
+    reg = (profile.get("reg_number") if profile else None) or ""
+    spec = (profile.get("specialties") if profile else None) or ""
+    hours = (profile.get("clinic_hours") if profile else None) or ""
+    address = (profile.get("address") if profile else None) or ""
+    phone = (profile.get("phone") if profile else None) or ""
     uhid_prefix = (profile.get("uhid_prefix") if profile else None) or "U.H.I.D."
     sig_url = profile.get("signature_data_url") if profile else None
     facilities = (profile.get("facilities") if profile else None) or \
